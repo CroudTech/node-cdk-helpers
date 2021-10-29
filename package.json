@@ -1,0 +1,44 @@
+{
+    "name": "croudtech-cdk/helpers",
+    "version": "0.0.1",
+    "description": "Helpers for AWS CDK",
+    "main": "lib/index.js",
+    "types": "lib/index.ts",
+    "scripts": {
+        "build": "tsc",
+        "watch": "tsc -w",
+        "test": "jest"
+    },
+    "repository": {
+      "type": "git",
+      "url": "git+ssh://git@github.com/CroudTech/node-cdk-helpers.git"
+    },
+    "keywords": [
+      "CDK",
+      "AWS"
+    ],
+    "author": "Jim Robinson <jscrobinson@gmail.com>",
+    "license": "UNLICENSED",
+    "bugs": {
+      "url": "https://github.com/CroudTech/node-cdk-helpers/issues"
+    },
+    "homepage": "https://github.com/CroudTech/node-cdk-helpers#readme",
+    "devDependencies": {
+        "@aws-cdk/assert": "1.129.0",
+        "@types/jest": "^26.0.10",
+        "@types/node": "10.17.27",
+        "aws-cdk": "1.129.0",
+        "jest": "^26.4.2",
+        "ts-jest": "^26.2.0",
+        "ts-node": "^9.0.0",
+        "typescript": "~3.9.7"
+    },
+    "dependencies": {
+        "@aws-cdk/aws-appmesh": "^1.129.0",
+        "@aws-cdk/aws-ec2": "^1.129.0",
+        "@aws-cdk/aws-ecs": "^1.129.0",
+        "@aws-cdk/aws-servicediscovery": "^1.129.0",
+        "@aws-cdk/core": "1.129.0",
+        "source-map-support": "^0.5.16"
+    }
+  }

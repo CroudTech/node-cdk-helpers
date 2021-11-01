@@ -2,8 +2,8 @@
     "name": "@croudtech-cdk/helpers",
     "version": "0.0.1",
     "description": "Helpers for AWS CDK",
-    "main": "lib/index.js",
-    "types": "lib/index.ts",
+    "main": "dist/index.js",
+    "types": "src/index.ts",
     "scripts": {
         "build": "tsc",
         "watch": "tsc -w",

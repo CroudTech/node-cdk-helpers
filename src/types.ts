@@ -103,6 +103,7 @@ export interface EcrApplicationProps extends BaseCdkExtensionProps {
     readonly appHealthCheckPath: string
     readonly environmentVars?: EnvironmentType
     readonly proxyPath?: string
+    readonly hostname?: string
     readonly applicationEcrRepository: string
     readonly appVolumes?: ApplicationVolume[]
 }
@@ -124,6 +125,7 @@ export interface defaultEcsAppParameters {
     ClusterName: cdk.CfnParameter
     EfsFilesystemId: cdk.CfnParameter,
     ProxyPath: cdk.CfnParameter,
+    Hostname?: cdk.CfnParameter,
 };
 
 export interface defaultEcsInitParameters {

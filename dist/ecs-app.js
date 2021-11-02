@@ -229,9 +229,15 @@ var EcrApplication = /** @class */ (function (_super) {
         var repository = ecr.Repository.fromRepositoryName(this.context, "EcrRepository", this.defaultEcsAppParameters.EcsRepositoryName.valueAsString);
         var image = new ecs.EcrImage(repository, this.defaultEcsAppParameters.EcsRepositoryTag.valueAsString);
         var dockerLabels = {};
-        dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = "PathPrefix(\"" + this.defaultEcsAppParameters.ProxyPath.valueAsString + "\")";
         dockerLabels["traefik.http.routers." + this._props.name + ".entrypoints"] = "websecure";
         dockerLabels["traefik.http.routers." + this._props.name + ".tls"] = "true";
+        if ("hostname" in this._props) {
+            var hostnameTld = this.getCfSSMValue("AlbHostname", "EcsIngress");
+            dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = "Host(\"" + this.defaultEcsAppParameters.Hostname.valueAsString + "." + hostnameTld + "\");PathPrefix(\"" + this.defaultEcsAppParameters.ProxyPath.valueAsString + "\")";
+        }
+        else {
+            dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = "PathPrefix(\"" + this.defaultEcsAppParameters.ProxyPath.valueAsString + "\");";
+        }
         var defaultEnvironmentVars = {
             ENVIRONMENT: this.defaultEcsAppParameters["AppEnvironment"].valueAsString,
             CONFIG_ENVIRONMENT: this.defaultParameters["Environment"].valueAsString,
@@ -276,7 +282,6 @@ var EcrApplication = /** @class */ (function (_super) {
     EcrApplication.prototype._addXrayDaemon = function (taskDefinition, logGroup) {
         this.containers["xray"] = new ecs.ContainerDefinition(this.context, "XrayContainer", {
             image: ecs.ContainerImage.fromRegistry(XRAY_DAEMON_IMAGE),
-            memoryLimitMiB: parseInt(this._props.memoryMiB),
             user: "1337",
             logging: new ecs.AwsLogDriver({
                 logGroup: logGroup,
@@ -297,7 +302,6 @@ var EcrApplication = /** @class */ (function (_super) {
     EcrApplication.prototype._addCwAgent = function (taskDefinition, logGroup) {
         this.containers["cwagent"] = new ecs.ContainerDefinition(this.context, "CwAgentContainer", {
             image: ecs.ContainerImage.fromRegistry(CLOUDWATCH_AGENT_IMAGE),
-            memoryLimitMiB: parseInt(this._props.memoryMiB),
             user: '0:1338',
             environment: {
                 CW_CONFIG_CONTENT: core_1.Fn.sub("{ \"metrics\": { \"namespace\":\"ECS/${Environment}/${AppName}\", \"metrics_collected\": { \"statsd\": {}}}}")
@@ -414,6 +418,9 @@ var EcrApplication = /** @class */ (function (_super) {
         };
         if (this._props.envoyProxy) {
             this.defaultEcsAppParameters["MeshArn"] = new core_1.CfnParameter(this.context, "MeshArn", { type: "AWS::SSM::Parameter::Value<String>", default: templates.cfParameterName(this.parameter_name_prefix, "Apps", "AppMeshArn") });
+        }
+        if (this._props.hostname) {
+            this.defaultEcsAppParameters["Hostname"] = new core_1.CfnParameter(this.context, "Hostname", { type: "String", default: this._props.hostname });
         }
     };
     EcrApplication.prototype._outputs = function () {

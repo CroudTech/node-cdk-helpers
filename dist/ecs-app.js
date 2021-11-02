@@ -233,7 +233,7 @@ var EcrApplication = /** @class */ (function (_super) {
         dockerLabels["traefik.http.routers." + this._props.name + ".tls"] = "true";
         if ("hostname" in this._props) {
             var hostnameTld = this.getCfSSMValue("AlbHostname", "EcsIngress");
-            dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = "Host(\"" + this.defaultEcsAppParameters.Hostname.valueAsString + "." + hostnameTld + "\");PathPrefix(\"" + this.defaultEcsAppParameters.ProxyPath.valueAsString + "\")";
+            dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = "Host(\"" + this.defaultEcsAppParameters.Hostname.valueAsString + "." + hostnameTld + "\") && PathPrefix(\"" + this.defaultEcsAppParameters.ProxyPath.valueAsString + "\")";
         }
         else {
             dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = "PathPrefix(\"" + this.defaultEcsAppParameters.ProxyPath.valueAsString + "\");";

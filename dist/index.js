@@ -10,7 +10,8 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-__exportStar(require("./ecs-app"), exports);
 exports.templates = require("./templates");
-__exportStar(require("./base-extensions"), exports);
 exports.types = require("./types");
+__exportStar(require("./base-extensions"), exports);
+__exportStar(require("./ecs-app"), exports);
+exports.resource_imports = require("./resource-imports");

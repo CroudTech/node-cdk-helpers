@@ -12,3 +12,5 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./ecs-app"), exports);
 exports.templates = require("./templates");
+__exportStar(require("./base-extensions"), exports);
+exports.types = require("./types");

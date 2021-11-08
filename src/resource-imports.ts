@@ -1,9 +1,10 @@
-import * as ec2 from "@aws-cdk/aws-ec2";
-import * as cdkTypes from "./types"
-import * as ecs from "@aws-cdk/aws-ecs";
-import * as cdk from '@aws-cdk/core';
-import * as servicediscovery from "@aws-cdk/aws-servicediscovery";
 import * as appmesh from "@aws-cdk/aws-appmesh"
+import * as cdk from '@aws-cdk/core';
+import * as cdkTypes from "./types"
+import * as ec2 from "@aws-cdk/aws-ec2";
+import * as ecs from "@aws-cdk/aws-ecs";
+import * as route53 from "@aws-cdk/aws-route53"
+import * as servicediscovery from "@aws-cdk/aws-servicediscovery";
 import * as ssm from "@aws-cdk/aws-ssm";
 import * as templates from "./templates"
 
@@ -15,7 +16,9 @@ export class ResourceImport {
         ecsClusters: {},
         vpcs: {},
         cloudmapNamespaces: {},
-        appmeshes: {}
+        appmeshes: {},
+        hostedZones: {},
+        subnets: {},
     }
     context: cdk.Stack
     parameter_name_prefix: string
@@ -30,6 +33,15 @@ export class ResourceImport {
     getCfSSMValue(key: string, stack: string): string {
         const parameter_name: string = templates.cfParameterName(this.parameter_name_prefix, stack, key)
         return ssm.StringParameter.valueForStringParameter(this.context, parameter_name)
+    }
+
+    importSubnet(name: string, props: cdkTypes.ImportSubnetProps): ec2.ISubnet {
+        if (!(name in this.importedResources.subnets)) {
+            this.importedResources.subnets[name] = ec2.Subnet.fromSubnetAttributes(this.context, name, {
+                subnetId: props.subnetId
+            })
+        }
+        return this.importedResources.subnets[name]
     }
 
     importVpc(name: string, props: cdkTypes.ImportVpcProps): ec2.IVpc {
@@ -136,4 +148,28 @@ export class ResourceImport {
         }
         return this.importedResources.appmeshes[name]
     }
+
+    importHostedZone(name: string, props: Partial<cdkTypes.ImportHostedZoneProps> = {}) {
+        if (!(name in this.importedResources.hostedZones)) {
+            const defaultProps: Partial<cdkTypes.ImportHostedZoneProps> = {}
+            if ("existingType" in props) {
+                const defaultProps: cdkTypes.ImportHostedZoneProps = {
+                    hostedZoneId: this.getCfSSMValue(`${props.existingType}HostedZoneId`, "Root"),
+                    zoneName: this.getCfSSMValue(`${props.existingType}HostedZoneTld`, "Root"),
+                }
+            }
+
+            const mergedProps = { ...defaultProps, ...props }
+            
+            this.importedResources.hostedZones[name] = route53.HostedZone.fromHostedZoneAttributes(
+                this.context,
+                name,
+                {
+                    hostedZoneId: mergedProps.hostedZoneId,
+                    zoneName: mergedProps.zoneName
+                }
+            )
+        }
+        return this.importedResources.hostedZones[name]
+    } 
 }

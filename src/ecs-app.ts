@@ -20,11 +20,17 @@ const XRAY_DAEMON_IMAGE = 'amazon/aws-xray-daemon:latest';
 const CLOUDWATCH_AGENT_IMAGE = 'amazon/cloudwatch-agent:latest';
 const APP_MESH_ENVOY_SIDECAR_VERSION = 'v1.15.1.0-prod';
 
-export class EcrApplicationInit extends cdkBase.BaseCdkResourceExtension {
+export class CdkHelpers extends cdkBase.BaseCdkResourceExtension {
+    _createResources() {
+
+    }
+}
+
+export class EcsApplicationInit extends cdkBase.BaseCdkResourceExtension {
     ecrRepository: ecr.CfnRepository
     defaultEcsInitParameters: cdkTypes.defaultEcsInitParameters
-    _props: cdkTypes.EcrApplicationInitProps
-    constructor(context: cdk.Stack, props: cdkTypes.EcrApplicationInitProps) {
+    _props: cdkTypes.EcsApplicationInitProps
+    constructor(context: cdk.Stack, props: cdkTypes.EcsApplicationInitProps) {
         super(context, props)
         this._props = props
         this._defaultEcsInitParameters()
@@ -79,10 +85,10 @@ export class EcrApplicationInit extends cdkBase.BaseCdkResourceExtension {
     }
 }
 
-export class EcrApplication extends cdkBase.BaseCdkResourceExtension {
+export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
     defaultEcsAppParameters: cdkTypes.defaultEcsAppParameters
     taskRole: iam.Role
-    _props: cdkTypes.EcrApplicationProps
+    _props: cdkTypes.EcsApplicationProps
     cluster: ecs.ICluster
     securityGroup: ec2.ISecurityGroup
     vpc: ec2.IVpc
@@ -93,7 +99,7 @@ export class EcrApplication extends cdkBase.BaseCdkResourceExtension {
     taskDefinition: ecs.TaskDefinition
 
 
-    constructor(context: cdk.Stack, props: cdkTypes.EcrApplicationProps) {
+    constructor(context: cdk.Stack, props: cdkTypes.EcsApplicationProps) {
         super(context, props)
         this._props = props
         this._defaultEcsAppParameters()

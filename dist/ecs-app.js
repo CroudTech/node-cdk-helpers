@@ -24,7 +24,7 @@ var __assign = (this && this.__assign) || function () {
     return __assign.apply(this, arguments);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EcrApplication = exports.EcrApplicationInit = void 0;
+exports.EcsApplication = exports.EcsApplicationInit = exports.CdkHelpers = void 0;
 var core_1 = require("@aws-cdk/core");
 var appmesh = require("@aws-cdk/aws-appmesh");
 var awslogs = require("@aws-cdk/aws-logs");
@@ -37,9 +37,19 @@ var templates = require("./templates");
 var XRAY_DAEMON_IMAGE = 'amazon/aws-xray-daemon:latest';
 var CLOUDWATCH_AGENT_IMAGE = 'amazon/cloudwatch-agent:latest';
 var APP_MESH_ENVOY_SIDECAR_VERSION = 'v1.15.1.0-prod';
-var EcrApplicationInit = /** @class */ (function (_super) {
-    __extends(EcrApplicationInit, _super);
-    function EcrApplicationInit(context, props) {
+var CdkHelpers = /** @class */ (function (_super) {
+    __extends(CdkHelpers, _super);
+    function CdkHelpers() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    CdkHelpers.prototype._createResources = function () {
+    };
+    return CdkHelpers;
+}(cdkBase.BaseCdkResourceExtension));
+exports.CdkHelpers = CdkHelpers;
+var EcsApplicationInit = /** @class */ (function (_super) {
+    __extends(EcsApplicationInit, _super);
+    function EcsApplicationInit(context, props) {
         var _this = _super.call(this, context, props) || this;
         _this._props = props;
         _this._defaultEcsInitParameters();
@@ -53,10 +63,10 @@ var EcrApplicationInit = /** @class */ (function (_super) {
         _this.addTags();
         return _this;
     }
-    EcrApplicationInit.prototype._createResources = function () {
+    EcsApplicationInit.prototype._createResources = function () {
         this._ecrRepository();
     };
-    EcrApplicationInit.prototype._ecrRepository = function () {
+    EcsApplicationInit.prototype._ecrRepository = function () {
         if (this.ecrRepository == undefined) {
             this.ecrRepository = new ecr.CfnRepository(this.context, "ApplicationEcrRepository", {
                 repositoryName: this.defaultEcsInitParameters.EcsRepositoryName.valueAsString,
@@ -83,18 +93,18 @@ var EcrApplicationInit = /** @class */ (function (_super) {
         }
         return this.ecrRepository;
     };
-    EcrApplicationInit.prototype._defaultEcsInitParameters = function () {
+    EcsApplicationInit.prototype._defaultEcsInitParameters = function () {
         this.defaultEcsInitParameters = {
             "EcsRepositoryName": new core_1.CfnParameter(this.context, "EcsRepositoryName", { type: "String", default: this._props.applicationEcrRepository }),
             "AppName": new core_1.CfnParameter(this.context, "AppName", { type: "String", default: this._props.name }),
         };
     };
-    return EcrApplicationInit;
+    return EcsApplicationInit;
 }(cdkBase.BaseCdkResourceExtension));
-exports.EcrApplicationInit = EcrApplicationInit;
-var EcrApplication = /** @class */ (function (_super) {
-    __extends(EcrApplication, _super);
-    function EcrApplication(context, props) {
+exports.EcsApplicationInit = EcsApplicationInit;
+var EcsApplication = /** @class */ (function (_super) {
+    __extends(EcsApplication, _super);
+    function EcsApplication(context, props) {
         var _this = _super.call(this, context, props) || this;
         _this._props = props;
         _this._defaultEcsAppParameters();
@@ -110,7 +120,7 @@ var EcrApplication = /** @class */ (function (_super) {
         _this.addTags();
         return _this;
     }
-    EcrApplication.prototype._createLogGroup = function () {
+    EcsApplication.prototype._createLogGroup = function () {
         if (this.logGroup == null) {
             this.logGroup = new awslogs.LogGroup(this.context, "ApplicationLogGroup", {
                 logGroupName: core_1.Fn.sub("${Organisation}-${Department}-${Environment}-EcsServiceLogs-${AppName}"),
@@ -120,7 +130,7 @@ var EcrApplication = /** @class */ (function (_super) {
         }
         return this.logGroup;
     };
-    EcrApplication.prototype._createVirtualNode = function () {
+    EcsApplication.prototype._createVirtualNode = function () {
         if (this.virtualNode == null) {
             this.virtualNode = new appmesh.VirtualNode(this.context, 'VirtualNode', {
                 mesh: this.resourceImports.importMesh("DefaultAppMesh"),
@@ -136,7 +146,7 @@ var EcrApplication = /** @class */ (function (_super) {
         }
         return this.virtualNode;
     };
-    EcrApplication.prototype._createTaskDefinition = function () {
+    EcsApplication.prototype._createTaskDefinition = function () {
         var _a, _b;
         if (this.taskDefinition == null) {
             this.taskDefinition = new ecs.FargateTaskDefinition(this.context, 'TaskDefinition', {
@@ -176,7 +186,7 @@ var EcrApplication = /** @class */ (function (_super) {
         }
         return this.taskDefinition;
     };
-    EcrApplication.prototype._createService = function (props) {
+    EcsApplication.prototype._createService = function (props) {
         var service = new ecs.FargateService(this.context, "Service", {
             cluster: props.cluster,
             taskDefinition: props.taskDefinition,
@@ -198,7 +208,7 @@ var EcrApplication = /** @class */ (function (_super) {
             targetUtilizationPercent: 80
         });
     };
-    EcrApplication.prototype._createResources = function () {
+    EcsApplication.prototype._createResources = function () {
         var logGroup = this._createLogGroup();
         var virtualNode = this._createVirtualNode();
         var taskDefinition = this._createTaskDefinition();
@@ -223,7 +233,7 @@ var EcrApplication = /** @class */ (function (_super) {
             taskDefinition: taskDefinition
         });
     };
-    EcrApplication.prototype._addAppContainer = function (taskDefinition, logGroup) {
+    EcsApplication.prototype._addAppContainer = function (taskDefinition, logGroup) {
         var _this = this;
         var _a;
         var repository = ecr.Repository.fromRepositoryName(this.context, "EcrRepository", this.defaultEcsAppParameters.EcsRepositoryName.valueAsString);
@@ -279,7 +289,7 @@ var EcrApplication = /** @class */ (function (_super) {
             });
         });
     };
-    EcrApplication.prototype._addXrayDaemon = function (taskDefinition, logGroup) {
+    EcsApplication.prototype._addXrayDaemon = function (taskDefinition, logGroup) {
         this.containers["xray"] = new ecs.ContainerDefinition(this.context, "XrayContainer", {
             image: ecs.ContainerImage.fromRegistry(XRAY_DAEMON_IMAGE),
             user: "1337",
@@ -299,7 +309,7 @@ var EcrApplication = /** @class */ (function (_super) {
         });
         return this.containers["xray"];
     };
-    EcrApplication.prototype._addCwAgent = function (taskDefinition, logGroup) {
+    EcsApplication.prototype._addCwAgent = function (taskDefinition, logGroup) {
         this.containers["cwagent"] = new ecs.ContainerDefinition(this.context, "CwAgentContainer", {
             image: ecs.ContainerImage.fromRegistry(CLOUDWATCH_AGENT_IMAGE),
             user: '0:1338',
@@ -316,7 +326,7 @@ var EcrApplication = /** @class */ (function (_super) {
         });
         return this.containers["cwagent"];
     };
-    EcrApplication.prototype._addEnvoyProxy = function (taskDefinition, logGroup) {
+    EcsApplication.prototype._addEnvoyProxy = function (taskDefinition, logGroup) {
         var virtualNode = this._createVirtualNode();
         var region = cdk.Stack.of(this.context).region;
         var partition = cdk.Stack.of(this.context).partition;
@@ -360,7 +370,7 @@ var EcrApplication = /** @class */ (function (_super) {
         });
         return this.containers["envoy"];
     };
-    EcrApplication.prototype._taskRole = function () {
+    EcsApplication.prototype._taskRole = function () {
         this.taskRole = new iam.Role(this.context, "ApplicationTaskRole", {
             assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
             // roleName: Fn.sub("${Organisation}-${Department}-${Environment}-${AppName}-TR"),
@@ -400,7 +410,7 @@ var EcrApplication = /** @class */ (function (_super) {
         this.taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("AWSXRayDaemonWriteAccess"));
         return this.taskRole;
     };
-    EcrApplication.prototype._defaultEcsAppParameters = function () {
+    EcsApplication.prototype._defaultEcsAppParameters = function () {
         var _a;
         this.defaultEcsAppParameters = {
             "AppName": new core_1.CfnParameter(this.context, "AppName", { type: "String", default: this._props.name }),
@@ -423,8 +433,8 @@ var EcrApplication = /** @class */ (function (_super) {
             this.defaultEcsAppParameters["Hostname"] = new core_1.CfnParameter(this.context, "Hostname", { type: "String", default: this._props.hostname });
         }
     };
-    EcrApplication.prototype._outputs = function () {
+    EcsApplication.prototype._outputs = function () {
     };
-    return EcrApplication;
+    return EcsApplication;
 }(cdkBase.BaseCdkResourceExtension));
-exports.EcrApplication = EcrApplication;
+exports.EcsApplication = EcsApplication;

@@ -12,11 +12,12 @@ var __assign = (this && this.__assign) || function () {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ResourceImport = void 0;
+var appmesh = require("@aws-cdk/aws-appmesh");
+var cdk = require("@aws-cdk/core");
 var ec2 = require("@aws-cdk/aws-ec2");
 var ecs = require("@aws-cdk/aws-ecs");
-var cdk = require("@aws-cdk/core");
+var route53 = require("@aws-cdk/aws-route53");
 var servicediscovery = require("@aws-cdk/aws-servicediscovery");
-var appmesh = require("@aws-cdk/aws-appmesh");
 var ssm = require("@aws-cdk/aws-ssm");
 var templates = require("./templates");
 var ResourceImport = /** @class */ (function () {
@@ -26,7 +27,9 @@ var ResourceImport = /** @class */ (function () {
             ecsClusters: {},
             vpcs: {},
             cloudmapNamespaces: {},
-            appmeshes: {}
+            appmeshes: {},
+            hostedZones: {},
+            subnets: {},
         };
         this.context = context;
         this._props = props;
@@ -35,6 +38,14 @@ var ResourceImport = /** @class */ (function () {
     ResourceImport.prototype.getCfSSMValue = function (key, stack) {
         var parameter_name = templates.cfParameterName(this.parameter_name_prefix, stack, key);
         return ssm.StringParameter.valueForStringParameter(this.context, parameter_name);
+    };
+    ResourceImport.prototype.importSubnet = function (name, props) {
+        if (!(name in this.importedResources.subnets)) {
+            this.importedResources.subnets[name] = ec2.Subnet.fromSubnetAttributes(this.context, name, {
+                subnetId: props.subnetId
+            });
+        }
+        return this.importedResources.subnets[name];
     };
     ResourceImport.prototype.importVpc = function (name, props) {
         var _a;
@@ -129,6 +140,24 @@ var ResourceImport = /** @class */ (function () {
             this.importedResources.appmeshes[name] = appmesh.Mesh.fromMeshArn(this.context, "AppMesh" + name, mergedProps.meshArn);
         }
         return this.importedResources.appmeshes[name];
+    };
+    ResourceImport.prototype.importHostedZone = function (name, props) {
+        if (props === void 0) { props = {}; }
+        if (!(name in this.importedResources.hostedZones)) {
+            var defaultProps = {};
+            if ("existingType" in props) {
+                var defaultProps_1 = {
+                    hostedZoneId: this.getCfSSMValue(props.existingType + "HostedZoneId", "Root"),
+                    zoneName: this.getCfSSMValue(props.existingType + "HostedZoneTld", "Root"),
+                };
+            }
+            var mergedProps = __assign(__assign({}, defaultProps), props);
+            this.importedResources.hostedZones[name] = route53.HostedZone.fromHostedZoneAttributes(this.context, name, {
+                hostedZoneId: mergedProps.hostedZoneId,
+                zoneName: mergedProps.zoneName
+            });
+        }
+        return this.importedResources.hostedZones[name];
     };
     return ResourceImport;
 }());

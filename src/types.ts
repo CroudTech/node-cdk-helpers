@@ -3,7 +3,7 @@ import * as ecs from "@aws-cdk/aws-ecs";
 import * as ec2 from "@aws-cdk/aws-ec2";
 import * as appmesh from "@aws-cdk/aws-appmesh";
 import * as servicediscovery from "@aws-cdk/aws-servicediscovery";
-
+import * as route53 from "@aws-cdk/aws-route53"
 
 
 export type EnvironmentType = {
@@ -26,8 +26,6 @@ export type ImportedVpcs = {
     [key: string]: ec2.IVpc
 }
 
-
-
 export type DockerLabels = {
     [key: string]: string
 }
@@ -44,12 +42,22 @@ export type ImportedAppMeshes = {
     [key: string]: appmesh.IMesh
 }
 
+export type ImportedHostedZones = {
+    [key: string]: route53.IHostedZone
+}
+
+export type ImportedSubnets = {
+    [key: string]: ec2.ISubnet
+}
+
 export interface ImportedResourceMap {
     securityGroups: ImportedSecurityGroupMap
     ecsClusters: ImportedEcsClusters
     vpcs: ImportedVpcs
     cloudmapNamespaces: ImportedCloudmapNamespaces
     appmeshes: ImportedAppMeshes
+    hostedZones: ImportedHostedZones
+    subnets: ImportedSubnets
 }
 
 export interface ImportEcsClusterProps {
@@ -81,9 +89,24 @@ export interface BaseCdkExtensionProps {
     readonly organisation: string
 }
 
-export interface EcrApplicationInitProps extends BaseCdkExtensionProps {
+export interface EcsApplicationInitProps extends BaseCdkExtensionProps {
     readonly applicationEcrRepository: string
     readonly name: string
+}
+
+export enum ImportHostedZoneType {
+    PUBLIC = "Public",
+    PRIVATE = "Private",
+}
+
+export interface ImportHostedZoneProps {
+    readonly hostedZoneId: string
+    readonly zoneName: string
+    readonly existingType?: ImportHostedZoneType
+}
+
+export interface ImportSubnetProps {
+    readonly subnetId: string
 }
 
 export interface ApplicationVolume {
@@ -93,7 +116,7 @@ export interface ApplicationVolume {
     readonly readOnly: boolean
 }
 
-export interface EcrApplicationProps extends BaseCdkExtensionProps {
+export interface EcsApplicationProps extends BaseCdkExtensionProps {
     readonly name: string
     readonly cpu: string
     readonly envoyProxy?: boolean

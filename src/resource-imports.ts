@@ -7,7 +7,7 @@ import * as route53 from "@aws-cdk/aws-route53"
 import * as servicediscovery from "@aws-cdk/aws-servicediscovery";
 import * as ssm from "@aws-cdk/aws-ssm";
 import * as templates from "./templates"
-
+import * as rds from "@aws-cdk/aws-rds"
 
 
 export class ResourceImport {
@@ -19,6 +19,7 @@ export class ResourceImport {
         appmeshes: {},
         hostedZones: {},
         subnets: {},
+        rdsInstances: {},
     }
     context: cdk.Stack
     parameter_name_prefix: string
@@ -163,7 +164,7 @@ export class ResourceImport {
         return this.importedResources.hostedZones[name]
     } 
 
-    importHostedZone(name: string, props: cdkTypes.ImportHostedZoneProps) {
+    importHostedZone(name: string, props: cdkTypes.ImportHostedZoneProps): route53.IHostedZone {
         if (!(name in this.importedResources.hostedZones)) {            
             this.importedResources.hostedZones[name] = route53.HostedZone.fromHostedZoneAttributes(
                 this.context,
@@ -176,4 +177,24 @@ export class ResourceImport {
         }
         return this.importedResources.hostedZones[name]
     } 
+
+    importRdsInstance(name: string, props: Partial<cdkTypes.ImportRdsInstanceProps> = {}): rds.IDatabaseInstance {
+        if (!(name in this.importedResources.rdsInstances)) {
+            const defaultProps: cdkTypes.ImportRdsInstanceProps = {
+                instanceIdentifier: this.getCfSSMValue("PostgresInstanceIdentifier", "Apps"),
+                instanceEndpointAddress: this.getCfSSMValue("PostgresInstanceHost", "Apps"),
+                securityGroups: [this.importSecuritygroup("RdsInstanceSecurityGroup", this.getCfSSMValue("PostgresInstanceSecurityGroup", "Apps"))],
+                port: 5432
+            }
+            const mergedProps:cdkTypes.ImportRdsInstanceProps = { ...defaultProps, ...props }
+            
+            this.importedResources.rdsInstances[name] = rds.DatabaseInstance.fromDatabaseInstanceAttributes(this.context, name, {
+                instanceIdentifier: mergedProps.instanceIdentifier,
+                instanceEndpointAddress: mergedProps.instanceEndpointAddress,
+                securityGroups: mergedProps.securityGroups,
+                port: mergedProps.port
+            })
+        }
+        return this.importedResources.rdsInstances[name]
+    }
 }

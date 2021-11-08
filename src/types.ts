@@ -4,7 +4,7 @@ import * as ec2 from "@aws-cdk/aws-ec2";
 import * as appmesh from "@aws-cdk/aws-appmesh";
 import * as servicediscovery from "@aws-cdk/aws-servicediscovery";
 import * as route53 from "@aws-cdk/aws-route53"
-
+import * as rds from "@aws-cdk/aws-rds"
 
 export type EnvironmentType = {
     [key: string]: string
@@ -50,6 +50,10 @@ export type ImportedSubnets = {
     [key: string]: ec2.ISubnet
 }
 
+export type ImportedRdsInstances = {
+    [key: string]: rds.IDatabaseInstance
+}
+
 export interface ImportedResourceMap {
     securityGroups: ImportedSecurityGroupMap
     ecsClusters: ImportedEcsClusters
@@ -58,6 +62,7 @@ export interface ImportedResourceMap {
     appmeshes: ImportedAppMeshes
     hostedZones: ImportedHostedZones
     subnets: ImportedSubnets
+    rdsInstances: ImportedRdsInstances
 }
 
 export interface ImportEcsClusterProps {
@@ -103,6 +108,13 @@ export interface ImportHostedZoneProps {
     readonly hostedZoneId: string
     readonly zoneName: string
     readonly existingType?: ImportHostedZoneType
+}
+
+export interface ImportRdsInstanceProps {
+    readonly instanceIdentifier: string
+    readonly instanceEndpointAddress: string 
+    readonly securityGroups: ec2.ISecurityGroup[]
+    readonly port: number
 }
 
 export interface ImportSubnetProps {

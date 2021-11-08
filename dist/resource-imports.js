@@ -20,6 +20,7 @@ var route53 = require("@aws-cdk/aws-route53");
 var servicediscovery = require("@aws-cdk/aws-servicediscovery");
 var ssm = require("@aws-cdk/aws-ssm");
 var templates = require("./templates");
+var rds = require("@aws-cdk/aws-rds");
 var ResourceImport = /** @class */ (function () {
     function ResourceImport(context, props) {
         this.importedResources = {
@@ -30,6 +31,7 @@ var ResourceImport = /** @class */ (function () {
             appmeshes: {},
             hostedZones: {},
             subnets: {},
+            rdsInstances: {},
         };
         this.context = context;
         this._props = props;
@@ -158,6 +160,25 @@ var ResourceImport = /** @class */ (function () {
             });
         }
         return this.importedResources.hostedZones[name];
+    };
+    ResourceImport.prototype.importRdsInstance = function (name, props) {
+        if (props === void 0) { props = {}; }
+        if (!(name in this.importedResources.rdsInstances)) {
+            var defaultProps = {
+                instanceIdentifier: this.getCfSSMValue("PostgresInstanceIdentifier", "Apps"),
+                instanceEndpointAddress: this.getCfSSMValue("PostgresInstanceHost", "Apps"),
+                securityGroups: [this.importSecuritygroup("RdsInstanceSecurityGroup", this.getCfSSMValue("PostgresInstanceSecurityGroup", "Apps"))],
+                port: 5432
+            };
+            var mergedProps = __assign(__assign({}, defaultProps), props);
+            this.importedResources.rdsInstances[name] = rds.DatabaseInstance.fromDatabaseInstanceAttributes(this.context, name, {
+                instanceIdentifier: mergedProps.instanceIdentifier,
+                instanceEndpointAddress: mergedProps.instanceEndpointAddress,
+                securityGroups: mergedProps.securityGroups,
+                port: mergedProps.port
+            });
+        }
+        return this.importedResources.rdsInstances[name];
     };
     return ResourceImport;
 }());

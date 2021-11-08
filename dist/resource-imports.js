@@ -141,20 +141,20 @@ var ResourceImport = /** @class */ (function () {
         }
         return this.importedResources.appmeshes[name];
     };
-    ResourceImport.prototype.importHostedZone = function (name, props) {
-        if (props === void 0) { props = {}; }
+    ResourceImport.prototype.importHostedZoneFromCfVpcStack = function (name, type) {
         if (!(name in this.importedResources.hostedZones)) {
-            var defaultProps = {};
-            if ("existingType" in props) {
-                var defaultProps_1 = {
-                    hostedZoneId: this.getCfSSMValue(props.existingType + "HostedZoneId", "Root"),
-                    zoneName: this.getCfSSMValue(props.existingType + "HostedZoneTld", "Root"),
-                };
-            }
-            var mergedProps = __assign(__assign({}, defaultProps), props);
             this.importedResources.hostedZones[name] = route53.HostedZone.fromHostedZoneAttributes(this.context, name, {
-                hostedZoneId: mergedProps.hostedZoneId,
-                zoneName: mergedProps.zoneName
+                hostedZoneId: this.getCfSSMValue(type + "HostedZoneId", "Root"),
+                zoneName: this.getCfSSMValue(type + "HostedZoneTld", "Root"),
+            });
+        }
+        return this.importedResources.hostedZones[name];
+    };
+    ResourceImport.prototype.importHostedZone = function (name, props) {
+        if (!(name in this.importedResources.hostedZones)) {
+            this.importedResources.hostedZones[name] = route53.HostedZone.fromHostedZoneAttributes(this.context, name, {
+                hostedZoneId: props.hostedZoneId,
+                zoneName: props.zoneName
             });
         }
         return this.importedResources.hostedZones[name];

@@ -149,24 +149,28 @@ export class ResourceImport {
         return this.importedResources.appmeshes[name]
     }
 
-    importHostedZone(name: string, props: Partial<cdkTypes.ImportHostedZoneProps> = {}) {
+    importHostedZoneFromCfVpcStack(name: string, type: cdkTypes.ImportHostedZoneType) {
         if (!(name in this.importedResources.hostedZones)) {
-            const defaultProps: Partial<cdkTypes.ImportHostedZoneProps> = {}
-            if ("existingType" in props) {
-                const defaultProps: cdkTypes.ImportHostedZoneProps = {
-                    hostedZoneId: this.getCfSSMValue(`${props.existingType}HostedZoneId`, "Root"),
-                    zoneName: this.getCfSSMValue(`${props.existingType}HostedZoneTld`, "Root"),
-                }
-            }
-
-            const mergedProps:Partial<cdkTypes.ImportHostedZoneProps> = { ...defaultProps, ...props }
-            
             this.importedResources.hostedZones[name] = route53.HostedZone.fromHostedZoneAttributes(
                 this.context,
                 name,
                 {
-                    hostedZoneId: mergedProps.hostedZoneId,
-                    zoneName: mergedProps.zoneName
+                    hostedZoneId: this.getCfSSMValue(`${type}HostedZoneId`, "Root"),
+                    zoneName: this.getCfSSMValue(`${type}HostedZoneTld`, "Root"),
+                }
+            )
+        }
+        return this.importedResources.hostedZones[name]
+    } 
+
+    importHostedZone(name: string, props: cdkTypes.ImportHostedZoneProps) {
+        if (!(name in this.importedResources.hostedZones)) {            
+            this.importedResources.hostedZones[name] = route53.HostedZone.fromHostedZoneAttributes(
+                this.context,
+                name,
+                {
+                    hostedZoneId: props.hostedZoneId,
+                    zoneName: props.zoneName
                 }
             )
         }

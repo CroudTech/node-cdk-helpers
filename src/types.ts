@@ -111,10 +111,10 @@ export interface ImportHostedZoneProps {
 }
 
 export interface ImportRdsInstanceProps {
-    readonly instanceIdentifier: string
-    readonly instanceEndpointAddress: string 
-    readonly securityGroups: ec2.ISecurityGroup[]
-    readonly port: number
+     readonly instanceIdentifier: string;
+     readonly instanceEndpointAddress: string;
+     readonly port: number;
+     readonly securityGroups: ec2.ISecurityGroup[];
 }
 
 export interface ImportSubnetProps {

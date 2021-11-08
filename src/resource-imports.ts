@@ -159,7 +159,7 @@ export class ResourceImport {
                 }
             }
 
-            const mergedProps = { ...defaultProps, ...props }
+            const mergedProps:Partial<cdkTypes.ImportHostedZoneProps> = { ...defaultProps, ...props }
             
             this.importedResources.hostedZones[name] = route53.HostedZone.fromHostedZoneAttributes(
                 this.context,

@@ -247,9 +247,9 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         dockerLabels["traefik.http.routers." + this._props.name + ".tls"] = "true"
         if ("hostname" in this._props) {
             const hostnameTld = this.getCfSSMValue("AlbHostname", "EcsIngress")
-            dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `Host("${this.defaultEcsAppParameters.Hostname.valueAsString}.${hostnameTld}") && PathPrefix("${this.defaultEcsAppParameters.ProxyPath.valueAsString}")`
+            dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `Host("${this.defaultEcsAppParameters.Hostname?.valueAsString}.${hostnameTld}") && PathPrefix("${this.defaultEcsAppParameters.ProxyPath.valueAsString}")`
         } else {
-            dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `PathPrefix("${this.defaultEcsAppParameters.ProxyPath.valueAsString}");`
+            dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `PathPrefix("${this.defaultEcsAppParameters.ProxyPath?.valueAsString}");`
         }
         const defaultEnvironmentVars = {
             ENVIRONMENT: this.defaultEcsAppParameters["AppEnvironment"].valueAsString,

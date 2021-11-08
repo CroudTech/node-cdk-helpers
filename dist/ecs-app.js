@@ -235,7 +235,7 @@ var EcsApplication = /** @class */ (function (_super) {
     };
     EcsApplication.prototype._addAppContainer = function (taskDefinition, logGroup) {
         var _this = this;
-        var _a;
+        var _a, _b, _c;
         var repository = ecr.Repository.fromRepositoryName(this.context, "EcrRepository", this.defaultEcsAppParameters.EcsRepositoryName.valueAsString);
         var image = new ecs.EcrImage(repository, this.defaultEcsAppParameters.EcsRepositoryTag.valueAsString);
         var dockerLabels = {};
@@ -243,10 +243,10 @@ var EcsApplication = /** @class */ (function (_super) {
         dockerLabels["traefik.http.routers." + this._props.name + ".tls"] = "true";
         if ("hostname" in this._props) {
             var hostnameTld = this.getCfSSMValue("AlbHostname", "EcsIngress");
-            dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = "Host(\"" + this.defaultEcsAppParameters.Hostname.valueAsString + "." + hostnameTld + "\") && PathPrefix(\"" + this.defaultEcsAppParameters.ProxyPath.valueAsString + "\")";
+            dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = "Host(\"" + ((_a = this.defaultEcsAppParameters.Hostname) === null || _a === void 0 ? void 0 : _a.valueAsString) + "." + hostnameTld + "\") && PathPrefix(\"" + this.defaultEcsAppParameters.ProxyPath.valueAsString + "\")";
         }
         else {
-            dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = "PathPrefix(\"" + this.defaultEcsAppParameters.ProxyPath.valueAsString + "\");";
+            dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = "PathPrefix(\"" + ((_b = this.defaultEcsAppParameters.ProxyPath) === null || _b === void 0 ? void 0 : _b.valueAsString) + "\");";
         }
         var defaultEnvironmentVars = {
             ENVIRONMENT: this.defaultEcsAppParameters["AppEnvironment"].valueAsString,
@@ -274,7 +274,7 @@ var EcsApplication = /** @class */ (function (_super) {
             }),
             dockerLabels: dockerLabels,
         });
-        (_a = this._props.appVolumes) === null || _a === void 0 ? void 0 : _a.forEach(function (volume) {
+        (_c = this._props.appVolumes) === null || _c === void 0 ? void 0 : _c.forEach(function (volume) {
             taskDefinition.addVolume({
                 efsVolumeConfiguration: {
                     fileSystemId: _this.defaultEcsAppParameters.EfsFilesystemId.valueAsString,

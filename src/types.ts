@@ -130,6 +130,7 @@ export interface ApplicationVolume {
 
 export interface EcsApplicationProps extends BaseCdkExtensionProps {
     readonly name: string
+    readonly nameSuffix: string
     readonly cpu: string
     readonly envoyProxy?: boolean
     readonly memoryMiB: string
@@ -152,15 +153,16 @@ export interface defaultParameters {
 export interface defaultEcsAppParameters {
     AppEnvironment: cdk.CfnParameter
     AppName: cdk.CfnParameter
+    AppNameSuffix: cdk.CfnParameter
     AppPort: cdk.CfnParameter
     EcsRepositoryName: cdk.CfnParameter
     EcsRepositoryTag: cdk.CfnParameter
     MeshArn?: cdk.CfnParameter
     ServiceDiscoveryName: cdk.CfnParameter
     ClusterName: cdk.CfnParameter
-    EfsFilesystemId: cdk.CfnParameter,
-    ProxyPath: cdk.CfnParameter,
-    Hostname?: cdk.CfnParameter,
+    EfsFilesystemId: cdk.CfnParameter
+    ProxyPath: cdk.CfnParameter
+    Hostname?: cdk.CfnParameter
 };
 
 export interface defaultEcsInitParameters {

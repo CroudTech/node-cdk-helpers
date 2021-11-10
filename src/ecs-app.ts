@@ -115,10 +115,14 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         this.addTags()
     }
 
+    private _resourceName(name): string{
+        return `${name}${this._props.name}${this._props.nameSuffix}`
+    }
+
     private _createLogGroup(): awslogs.LogGroup {
         if (this.logGroup == null) {
             this.logGroup = new awslogs.LogGroup(this.context, `ApplicationLogGroup`, {
-                logGroupName: Fn.sub("${Organisation}-${Department}-${Environment}-EcsServiceLogs-${AppName}"),
+                logGroupName: Fn.sub("${Organisation}-${Department}-${Environment}-EcsServiceLogs-${AppName}${AppNameSuffix}"),
                 retention: awslogs.RetentionDays.ONE_MONTH,
                 removalPolicy: cdk.RemovalPolicy.DESTROY,
             })
@@ -128,9 +132,9 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
 
     private _createVirtualNode(): appmesh.VirtualNode {
         if (this.virtualNode == null) {
-            this.virtualNode = new appmesh.VirtualNode(this.context, 'VirtualNode', {
+            this.virtualNode = new appmesh.VirtualNode(this.context, this._resourceName('VirtualNode'), {
                 mesh: this.resourceImports.importMesh("DefaultAppMesh"),
-                virtualNodeName: "vn-" + this.defaultEcsAppParameters.AppName.valueAsString,
+                virtualNodeName: Fn.sub("${Organisation}-${Department}-${Environment}-${AppName}${AppNameSuffix}"),
                 listeners: [
                     appmesh.VirtualNodeListener.http({
                         port: this.defaultEcsAppParameters.AppPort.valueAsNumber
@@ -149,7 +153,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         if (this.taskDefinition == null) {
             this.taskDefinition = new ecs.FargateTaskDefinition(this.context, 'TaskDefinition', {
                 cpu: parseInt(this._props.cpu),
-                family: Fn.sub("${Organisation}-${Department}-${Environment}-${AppName}"),
+                family: Fn.sub("${Organisation}-${Department}-${Environment}-${AppName}${AppNameSuffix}"),
                 memoryLimitMiB: parseInt(this._props.memoryMiB),
                 taskRole: this._taskRole(),
 
@@ -191,7 +195,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         const service = new ecs.FargateService(this.context, "Service", {
             cluster: props.cluster,
             taskDefinition: props.taskDefinition,
-            serviceName: Fn.sub("${Organisation}-${Department}-${Environment}-${AppName}"),
+            serviceName: Fn.sub("${Organisation}-${Department}-${Environment}-${AppName}${AppNameSuffix}"),
             cloudMapOptions: {
                 cloudMapNamespace: props.cloudmapNamespace,
                 container: this.containers["app"],
@@ -426,6 +430,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
     private _defaultEcsAppParameters(): void {
         this.defaultEcsAppParameters = {
             "AppName": new CfnParameter(this.context, "AppName", { type: "String", default: this._props.name }),
+            "AppNameSuffix": new CfnParameter(this.context, "AppNameSuffix", { type: "String", default: this._props.nameSuffix }),
             "AppPort": new CfnParameter(this.context, "AppPort", { type: "Number", default: this._props.appPort }),
             "ProxyPath": new CfnParameter(this.context, "ProxyPath", { type: "String", default: this._props.proxyPath }),
             "AppEnvironment": new CfnParameter(this.context, "AppEnvironment", { type: "String", default: process.env["ENVIRONMENT"]?.toLowerCase() }),

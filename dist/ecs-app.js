@@ -120,10 +120,13 @@ var EcsApplication = /** @class */ (function (_super) {
         _this.addTags();
         return _this;
     }
+    EcsApplication.prototype._resourceName = function (name) {
+        return "" + name + this._props.name + this._props.nameSuffix;
+    };
     EcsApplication.prototype._createLogGroup = function () {
         if (this.logGroup == null) {
             this.logGroup = new awslogs.LogGroup(this.context, "ApplicationLogGroup", {
-                logGroupName: core_1.Fn.sub("${Organisation}-${Department}-${Environment}-EcsServiceLogs-${AppName}"),
+                logGroupName: core_1.Fn.sub("${Organisation}-${Department}-${Environment}-EcsServiceLogs-${AppName}${AppNameSuffix}"),
                 retention: awslogs.RetentionDays.ONE_MONTH,
                 removalPolicy: cdk.RemovalPolicy.DESTROY,
             });
@@ -132,9 +135,9 @@ var EcsApplication = /** @class */ (function (_super) {
     };
     EcsApplication.prototype._createVirtualNode = function () {
         if (this.virtualNode == null) {
-            this.virtualNode = new appmesh.VirtualNode(this.context, 'VirtualNode', {
+            this.virtualNode = new appmesh.VirtualNode(this.context, this._resourceName('VirtualNode'), {
                 mesh: this.resourceImports.importMesh("DefaultAppMesh"),
-                virtualNodeName: "vn-" + this.defaultEcsAppParameters.AppName.valueAsString,
+                virtualNodeName: core_1.Fn.sub("${Organisation}-${Department}-${Environment}-${AppName}${AppNameSuffix}"),
                 listeners: [
                     appmesh.VirtualNodeListener.http({
                         port: this.defaultEcsAppParameters.AppPort.valueAsNumber
@@ -151,7 +154,7 @@ var EcsApplication = /** @class */ (function (_super) {
         if (this.taskDefinition == null) {
             this.taskDefinition = new ecs.FargateTaskDefinition(this.context, 'TaskDefinition', {
                 cpu: parseInt(this._props.cpu),
-                family: core_1.Fn.sub("${Organisation}-${Department}-${Environment}-${AppName}"),
+                family: core_1.Fn.sub("${Organisation}-${Department}-${Environment}-${AppName}${AppNameSuffix}"),
                 memoryLimitMiB: parseInt(this._props.memoryMiB),
                 taskRole: this._taskRole(),
                 proxyConfiguration: new ecs.AppMeshProxyConfiguration({
@@ -190,7 +193,7 @@ var EcsApplication = /** @class */ (function (_super) {
         var service = new ecs.FargateService(this.context, "Service", {
             cluster: props.cluster,
             taskDefinition: props.taskDefinition,
-            serviceName: core_1.Fn.sub("${Organisation}-${Department}-${Environment}-${AppName}"),
+            serviceName: core_1.Fn.sub("${Organisation}-${Department}-${Environment}-${AppName}${AppNameSuffix}"),
             cloudMapOptions: {
                 cloudMapNamespace: props.cloudmapNamespace,
                 container: this.containers["app"],
@@ -414,6 +417,7 @@ var EcsApplication = /** @class */ (function (_super) {
         var _a;
         this.defaultEcsAppParameters = {
             "AppName": new core_1.CfnParameter(this.context, "AppName", { type: "String", default: this._props.name }),
+            "AppNameSuffix": new core_1.CfnParameter(this.context, "AppNameSuffix", { type: "String", default: this._props.nameSuffix }),
             "AppPort": new core_1.CfnParameter(this.context, "AppPort", { type: "Number", default: this._props.appPort }),
             "ProxyPath": new core_1.CfnParameter(this.context, "ProxyPath", { type: "String", default: this._props.proxyPath }),
             "AppEnvironment": new core_1.CfnParameter(this.context, "AppEnvironment", { type: "String", default: (_a = process.env["ENVIRONMENT"]) === null || _a === void 0 ? void 0 : _a.toLowerCase() }),

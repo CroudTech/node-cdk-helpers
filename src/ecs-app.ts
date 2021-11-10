@@ -49,7 +49,7 @@ export class EcsApplicationInit extends cdkBase.BaseCdkResourceExtension {
         this._ecrRepository()
     }
 
-    private _ecrRepository(): ecr.CfnRepository {
+    protected _ecrRepository(): ecr.CfnRepository {
         if (this.ecrRepository == undefined) {
             this.ecrRepository = new ecr.CfnRepository(this.context, "ApplicationEcrRepository", {
                 repositoryName: this.defaultEcsInitParameters.EcsRepositoryName.valueAsString,
@@ -115,11 +115,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         this.addTags()
     }
 
-    private _resourceName(name): string{
-        return `${name}${this._props.name}${this._props.nameSuffix}`
-    }
-
-    private _createLogGroup(): awslogs.LogGroup {
+    protected _createLogGroup(): awslogs.LogGroup {
         if (this.logGroup == null) {
             this.logGroup = new awslogs.LogGroup(this.context, `ApplicationLogGroup`, {
                 logGroupName: Fn.sub("${Organisation}-${Department}-${Environment}-EcsServiceLogs-${AppName}${AppNameSuffix}"),
@@ -130,7 +126,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         return this.logGroup
     }
 
-    private _createVirtualNode(): appmesh.VirtualNode {
+    protected _createVirtualNode(): appmesh.VirtualNode {
         if (this.virtualNode == null) {
             this.virtualNode = new appmesh.VirtualNode(this.context, this._resourceName('VirtualNode'), {
                 mesh: this.resourceImports.importMesh("DefaultAppMesh"),
@@ -149,7 +145,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         return this.virtualNode
     }
 
-    private _createTaskDefinition(): ecs.TaskDefinition {
+    protected _createTaskDefinition(): ecs.TaskDefinition {
         if (this.taskDefinition == null) {
             this.taskDefinition = new ecs.FargateTaskDefinition(this.context, 'TaskDefinition', {
                 cpu: parseInt(this._props.cpu),
@@ -191,7 +187,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         return this.taskDefinition
     }
 
-    private _createService(props: cdkTypes.CreateServiceProps) {
+    protected _createService(props: cdkTypes.CreateServiceProps) {
         const service = new ecs.FargateService(this.context, "Service", {
             cluster: props.cluster,
             taskDefinition: props.taskDefinition,
@@ -243,7 +239,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         })
     }
 
-    private _addAppContainer(taskDefinition: ecs.TaskDefinition, logGroup: awslogs.ILogGroup) {
+    protected _addAppContainer(taskDefinition: ecs.TaskDefinition, logGroup: awslogs.ILogGroup) {
         const repository = ecr.Repository.fromRepositoryName(this.context, "EcrRepository", this.defaultEcsAppParameters.EcsRepositoryName.valueAsString)
         const image = new ecs.EcrImage(repository, this.defaultEcsAppParameters.EcsRepositoryTag.valueAsString)
         const dockerLabels: cdkTypes.DockerLabels = {}
@@ -299,7 +295,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         })
     }
 
-    private _addXrayDaemon(taskDefinition: ecs.TaskDefinition, logGroup: awslogs.LogGroup): ecs.ContainerDefinition {
+    protected _addXrayDaemon(taskDefinition: ecs.TaskDefinition, logGroup: awslogs.LogGroup): ecs.ContainerDefinition {
         this.containers["xray"] = new ecs.ContainerDefinition(this.context, "XrayContainer", {
             image: ecs.ContainerImage.fromRegistry(XRAY_DAEMON_IMAGE),
             user: "1337",
@@ -320,7 +316,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         return this.containers["xray"]
     }
 
-    private _addCwAgent(taskDefinition: ecs.TaskDefinition, logGroup: awslogs.LogGroup): ecs.ContainerDefinition {
+    protected _addCwAgent(taskDefinition: ecs.TaskDefinition, logGroup: awslogs.LogGroup): ecs.ContainerDefinition {
         this.containers["cwagent"] = new ecs.ContainerDefinition(this.context, "CwAgentContainer", {
             image: ecs.ContainerImage.fromRegistry(CLOUDWATCH_AGENT_IMAGE),
             user: '0:1338',
@@ -338,7 +334,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         return this.containers["cwagent"]
     }
 
-    private _addEnvoyProxy(taskDefinition: ecs.TaskDefinition, logGroup: awslogs.LogGroup): ecs.ContainerDefinition {
+    protected _addEnvoyProxy(taskDefinition: ecs.TaskDefinition, logGroup: awslogs.LogGroup): ecs.ContainerDefinition {
         const virtualNode = this._createVirtualNode()
         const region = cdk.Stack.of(this.context).region
         const partition = cdk.Stack.of(this.context).partition;
@@ -384,7 +380,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         return this.containers["envoy"]
     }
 
-    private _taskRole() {
+    protected _taskRole() {
         this.taskRole = new iam.Role(this.context, "ApplicationTaskRole", {
             assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
             // roleName: Fn.sub("${Organisation}-${Department}-${Environment}-${AppName}-TR"),
@@ -427,7 +423,11 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         return this.taskRole
     }
 
-    private _defaultEcsAppParameters(): void {
+    protected _resourceName(name): string{
+        return `${name}${this._props.name}${this._props.nameSuffix}`
+    }
+
+    protected _defaultEcsAppParameters(): void {
         this.defaultEcsAppParameters = {
             "AppName": new CfnParameter(this.context, "AppName", { type: "String", default: this._props.name }),
             "AppNameSuffix": new CfnParameter(this.context, "AppNameSuffix", { type: "String", default: this._props.nameSuffix }),
@@ -440,7 +440,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
                 type: "String",
                 default: process.env["DOCKER_TAG"] || "latest"
             }),
-            "ClusterName": new CfnParameter(this.context, "ClusterName", { type: "AWS::SSM::Parameter::Value<String>", default: templates.cfParameterName(this.parameter_name_prefix, "Apps", "FargateClusterArn") }),
+            "ClusterName": new CfnParameter(this.context, "ClusterName", { type: "AWS::SSM::Parameter::Value<String>", default: templates.cfParameterName(this.parameter_name_prefix, "Apps", this._props.ecsClusterSsmKey) }),
             "EfsFilesystemId": new CfnParameter(this.context, "EfsFilesystemId", { type: "AWS::SSM::Parameter::Value<String>", default: templates.cfParameterName(this.parameter_name_prefix, "Apps", "EfsFilesystemId") })
         }
         if (this._props.envoyProxy) {
@@ -451,7 +451,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         }
     }
 
-    private _outputs(): void {
+    protected _outputs(): void {
 
     }
 }

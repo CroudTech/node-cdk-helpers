@@ -120,9 +120,6 @@ var EcsApplication = /** @class */ (function (_super) {
         _this.addTags();
         return _this;
     }
-    EcsApplication.prototype._resourceName = function (name) {
-        return "" + name + this._props.name + this._props.nameSuffix;
-    };
     EcsApplication.prototype._createLogGroup = function () {
         if (this.logGroup == null) {
             this.logGroup = new awslogs.LogGroup(this.context, "ApplicationLogGroup", {
@@ -413,6 +410,9 @@ var EcsApplication = /** @class */ (function (_super) {
         this.taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("AWSXRayDaemonWriteAccess"));
         return this.taskRole;
     };
+    EcsApplication.prototype._resourceName = function (name) {
+        return "" + name + this._props.name + this._props.nameSuffix;
+    };
     EcsApplication.prototype._defaultEcsAppParameters = function () {
         var _a;
         this.defaultEcsAppParameters = {
@@ -427,7 +427,7 @@ var EcsApplication = /** @class */ (function (_super) {
                 type: "String",
                 default: process.env["DOCKER_TAG"] || "latest"
             }),
-            "ClusterName": new core_1.CfnParameter(this.context, "ClusterName", { type: "AWS::SSM::Parameter::Value<String>", default: templates.cfParameterName(this.parameter_name_prefix, "Apps", "FargateClusterArn") }),
+            "ClusterName": new core_1.CfnParameter(this.context, "ClusterName", { type: "AWS::SSM::Parameter::Value<String>", default: templates.cfParameterName(this.parameter_name_prefix, "Apps", this._props.ecsClusterSsmKey) }),
             "EfsFilesystemId": new core_1.CfnParameter(this.context, "EfsFilesystemId", { type: "AWS::SSM::Parameter::Value<String>", default: templates.cfParameterName(this.parameter_name_prefix, "Apps", "EfsFilesystemId") })
         };
         if (this._props.envoyProxy) {

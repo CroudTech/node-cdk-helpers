@@ -132,7 +132,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
                     })
                 ],
                 serviceDiscovery: appmesh.ServiceDiscovery.dns(
-                    this.getCfSSMValue("ECSServiceDiscoveryDomainName", "Apps") + "." + this.defaultEcsAppParameters["ServiceDiscoveryName"].valueAsString,
+                    this.defaultEcsAppParameters["ServiceDiscoveryName"].valueAsString + "." + this.getCfSSMValue("ECSServiceDiscoveryDomainName", "Apps"),
                 ),
                 accessLog: appmesh.AccessLog.fromFilePath("/dev/stdout")
             });

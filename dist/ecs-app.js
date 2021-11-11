@@ -107,7 +107,7 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
                         port: this.defaultEcsAppParameters.AppPort.valueAsNumber
                     })
                 ],
-                serviceDiscovery: appmesh.ServiceDiscovery.dns(this.getCfSSMValue("ECSServiceDiscoveryDomainName", "Apps") + "." + this.defaultEcsAppParameters["ServiceDiscoveryName"].valueAsString),
+                serviceDiscovery: appmesh.ServiceDiscovery.dns(this.defaultEcsAppParameters["ServiceDiscoveryName"].valueAsString + "." + this.getCfSSMValue("ECSServiceDiscoveryDomainName", "Apps")),
                 accessLog: appmesh.AccessLog.fromFilePath("/dev/stdout")
             });
         }

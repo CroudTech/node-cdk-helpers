@@ -2,19 +2,14 @@ import { CfnParameter, Fn } from '@aws-cdk/core';
 import * as appmesh from "@aws-cdk/aws-appmesh"
 import * as awslogs from "@aws-cdk/aws-logs"
 import * as cdk from '@aws-cdk/core';
+import * as cdkBase from "./base-extensions"
+import * as cdkTypes from "./types"
+import * as ec2 from "@aws-cdk/aws-ec2";
 import * as ecr from "@aws-cdk/aws-ecr";
 import * as ecs from "@aws-cdk/aws-ecs";
 import * as iam from "@aws-cdk/aws-iam"
-import * as ec2 from "@aws-cdk/aws-ec2";
-import * as cdkTypes from "./types"
-import * as cdkBase from "./base-extensions"
-import * as resourceImports from "./resource-imports"
-
-
-
 import * as templates from "./templates"
-import { format } from 'path';
-import { hostname } from 'os';
+import * as ssm from '@aws-cdk/aws-ssm';
 
 const XRAY_DAEMON_IMAGE = 'amazon/aws-xray-daemon:latest';
 const CLOUDWATCH_AGENT_IMAGE = 'amazon/cloudwatch-agent:latest';
@@ -188,18 +183,28 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
     }
 
     protected _createService(props: cdkTypes.CreateServiceProps) {
-        const service = new ecs.FargateService(this.context, "Service", {
-            cluster: props.cluster,
-            taskDefinition: props.taskDefinition,
-            serviceName: Fn.sub("${Organisation}-${Department}-${Environment}-${AppName}${AppNameSuffix}"),
-            cloudMapOptions: {
-                cloudMapNamespace: props.cloudmapNamespace,
-                container: this.containers["app"],
-                dnsTtl: cdk.Duration.seconds(20),
-                name: this.defaultEcsAppParameters["ServiceDiscoveryName"].valueAsString
-            },
-            securityGroup: props.ecsSecurityGroup
-        });
+        if (this._props.enableCloudmap) {
+            var service = new ecs.FargateService(this.context, "Service", {
+                cluster: props.cluster,
+                taskDefinition: props.taskDefinition,
+                serviceName: Fn.sub("${Organisation}-${Department}-${Environment}-${AppName}${AppNameSuffix}"),
+                cloudMapOptions: {
+                    cloudMapNamespace: props.cloudmapNamespace,
+                    container: this.containers["app"],
+                    dnsTtl: cdk.Duration.seconds(20),
+                    name: this.defaultEcsAppParameters["ServiceDiscoveryName"].valueAsString
+                },
+                securityGroup: props.ecsSecurityGroup
+            });
+        } else {
+            var service = new ecs.FargateService(this.context, "Service", {
+                cluster: props.cluster,
+                taskDefinition: props.taskDefinition,
+                serviceName: Fn.sub("${Organisation}-${Department}-${Environment}-${AppName}${AppNameSuffix}"),                
+                securityGroup: props.ecsSecurityGroup
+            });
+        }
+        
         service
             .autoScaleTaskCount({
                 minCapacity: 1,
@@ -218,9 +223,11 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             vpcId: this.getCfSSMValue("VPC", "Root")
         })
         const ecsSecurityGroup = this.resourceImports.importSecuritygroup("FargateContainerSecurityGroup", this.getCfSSMValue("FargateContainerSecurityGroup", "Root"))
+        const clusterArn = ssm.StringParameter.valueForStringParameter(
+            this.context, templates.cfParameterName(this.parameter_name_prefix, "Apps", this._props.ecsClusterSsmKey)); 
         const cluster = this.resourceImports.importEcsCluster("EcsCluster", {
             vpc: vpc,
-            clusterArn: this.defaultEcsAppParameters["ClusterName"].valueAsString,
+            clusterArn: clusterArn,
             securityGroup: ecsSecurityGroup
         })
 
@@ -428,6 +435,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
     }
 
     protected _defaultEcsAppParameters(): void {
+        
         this.defaultEcsAppParameters = {
             "AppName": new CfnParameter(this.context, "AppName", { type: "String", default: this._props.name }),
             "AppNameSuffix": new CfnParameter(this.context, "AppNameSuffix", { type: "String", default: this._props.nameSuffix }),

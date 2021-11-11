@@ -1,28 +1,17 @@
 "use strict";
-var __assign = (this && this.__assign) || function () {
-    __assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ResourceImport = void 0;
-var appmesh = require("@aws-cdk/aws-appmesh");
-var cdk = require("@aws-cdk/core");
-var ec2 = require("@aws-cdk/aws-ec2");
-var ecs = require("@aws-cdk/aws-ecs");
-var route53 = require("@aws-cdk/aws-route53");
-var servicediscovery = require("@aws-cdk/aws-servicediscovery");
-var ssm = require("@aws-cdk/aws-ssm");
-var templates = require("./templates");
-var rds = require("@aws-cdk/aws-rds");
-var ResourceImport = /** @class */ (function () {
-    function ResourceImport(context, props) {
+const appmesh = require("@aws-cdk/aws-appmesh");
+const cdk = require("@aws-cdk/core");
+const ec2 = require("@aws-cdk/aws-ec2");
+const ecs = require("@aws-cdk/aws-ecs");
+const route53 = require("@aws-cdk/aws-route53");
+const servicediscovery = require("@aws-cdk/aws-servicediscovery");
+const ssm = require("@aws-cdk/aws-ssm");
+const templates = require("./templates");
+const rds = require("@aws-cdk/aws-rds");
+class ResourceImport {
+    constructor(context, props) {
         this.importedResources = {
             securityGroups: {},
             ecsClusters: {},
@@ -37,24 +26,24 @@ var ResourceImport = /** @class */ (function () {
         this._props = props;
         this.parameter_name_prefix = templates.cfParameterPrefix(this._props["organisation"], this._props["department"], this._props["environment"]);
     }
-    ResourceImport.prototype.getCfSSMValue = function (key, stack) {
-        var parameter_name = templates.cfParameterName(this.parameter_name_prefix, stack, key);
+    getCfSSMValue(key, stack) {
+        const parameter_name = templates.cfParameterName(this.parameter_name_prefix, stack, key);
         return ssm.StringParameter.valueForStringParameter(this.context, parameter_name);
-    };
-    ResourceImport.prototype.importSubnet = function (name, props) {
+    }
+    importSubnet(name, props) {
         if (!(name in this.importedResources.subnets)) {
             this.importedResources.subnets[name] = ec2.Subnet.fromSubnetAttributes(this.context, name, {
                 subnetId: props.subnetId
             });
         }
         return this.importedResources.subnets[name];
-    };
-    ResourceImport.prototype.importVpc = function (name, props) {
+    }
+    importVpc(name, props) {
         var _a;
         if (!(name in this.importedResources.vpcs)) {
-            var region_1 = cdk.Stack.of(this.context).region;
-            var availabilityZones_1 = [];
-            var defaultProps = {
+            const region = cdk.Stack.of(this.context).region;
+            const availabilityZones = [];
+            const defaultProps = {
                 vpcId: "",
                 availabilityZoneSuffixes: [
                     "a", "b", "c"
@@ -80,13 +69,13 @@ var ResourceImport = /** @class */ (function () {
                     this.getCfSSMValue("PrivateRouteTableCId", "Root"),
                 ]
             };
-            var mergedProps = __assign(__assign({}, defaultProps), props);
-            (_a = mergedProps.availabilityZoneSuffixes) === null || _a === void 0 ? void 0 : _a.forEach(function (suffix) {
-                availabilityZones_1.push("" + region_1 + suffix);
+            const mergedProps = Object.assign(Object.assign({}, defaultProps), props);
+            (_a = mergedProps.availabilityZoneSuffixes) === null || _a === void 0 ? void 0 : _a.forEach(suffix => {
+                availabilityZones.push(`${region}${suffix}`);
             });
-            this.importedResources.vpcs[name] = ec2.Vpc.fromVpcAttributes(this.context, "Vpc" + name, {
+            this.importedResources.vpcs[name] = ec2.Vpc.fromVpcAttributes(this.context, `Vpc${name}`, {
                 vpcId: this.getCfSSMValue("VPC", "Root"),
-                availabilityZones: availabilityZones_1,
+                availabilityZones: availabilityZones,
                 publicSubnetIds: mergedProps.publicSubnetIds,
                 privateSubnetIds: mergedProps.privateSubnetIds,
                 publicSubnetRouteTableIds: mergedProps.publicSubnetRouteTableIds,
@@ -94,17 +83,17 @@ var ResourceImport = /** @class */ (function () {
             });
         }
         return this.importedResources.vpcs[name];
-    };
-    ResourceImport.prototype.importSecuritygroup = function (name, securityGroupId) {
+    }
+    importSecuritygroup(name, securityGroupId) {
         if (!(securityGroupId in this.importedResources.securityGroups)) {
-            this.importedResources.securityGroups[name] = ec2.SecurityGroup.fromSecurityGroupId(this.context, "SecurityGroup" + name, securityGroupId);
+            this.importedResources.securityGroups[name] = ec2.SecurityGroup.fromSecurityGroupId(this.context, `SecurityGroup${name}`, securityGroupId);
         }
         return this.importedResources.securityGroups[name];
-    };
-    ResourceImport.prototype.importEcsCluster = function (name, props) {
+    }
+    importEcsCluster(name, props) {
         if (!(name in this.importedResources.ecsClusters)) {
-            var clusterName = this.context.splitArn(props.clusterArn, cdk.ArnFormat.SLASH_RESOURCE_NAME).resourceName || "";
-            this.importedResources.ecsClusters[name] = ecs.Cluster.fromClusterAttributes(this.context, "EcsCluster" + name, {
+            const clusterName = this.context.splitArn(props.clusterArn, cdk.ArnFormat.SLASH_RESOURCE_NAME).resourceName || "";
+            this.importedResources.ecsClusters[name] = ecs.Cluster.fromClusterAttributes(this.context, `EcsCluster${name}`, {
                 vpc: props.vpc,
                 clusterName: clusterName,
                 securityGroups: [
@@ -113,16 +102,15 @@ var ResourceImport = /** @class */ (function () {
             });
         }
         return this.importedResources.ecsClusters[name];
-    };
-    ResourceImport.prototype.importCloudmapNamespace = function (name, props) {
-        if (props === void 0) { props = {}; }
+    }
+    importCloudmapNamespace(name, props = {}) {
         if (!(name in this.importedResources.cloudmapNamespaces)) {
-            var defaultProps = {
+            const defaultProps = {
                 namespaceId: this.getCfSSMValue("ECSServiceDiscoveryNamespace", "Apps"),
                 namespaceName: this.getCfSSMValue("ECSServiceDiscoveryDomainName", "Apps"),
             };
-            var mergedProps = __assign(__assign({}, defaultProps), props);
-            this.importedResources.cloudmapNamespaces[name] = servicediscovery.PrivateDnsNamespace.fromPrivateDnsNamespaceAttributes(this.context, "ServiceDiscoveryNamespace" + name, {
+            const mergedProps = Object.assign(Object.assign({}, defaultProps), props);
+            this.importedResources.cloudmapNamespaces[name] = servicediscovery.PrivateDnsNamespace.fromPrivateDnsNamespaceAttributes(this.context, `ServiceDiscoveryNamespace${name}`, {
                 namespaceId: mergedProps.namespaceId,
                 namespaceName: mergedProps.namespaceName,
                 namespaceArn: cdk.Fn.sub("arn:aws:servicediscovery:${AWS::Region}:${AWS::AccountId}:namespace/${NamespaceId}", {
@@ -131,28 +119,27 @@ var ResourceImport = /** @class */ (function () {
             });
         }
         return this.importedResources.cloudmapNamespaces[name];
-    };
-    ResourceImport.prototype.importMesh = function (name, props) {
-        if (props === void 0) { props = {}; }
+    }
+    importMesh(name, props = {}) {
         if (!(name in this.importedResources.appmeshes)) {
-            var defaultProps = {
+            const defaultProps = {
                 meshArn: this.getCfSSMValue("AppMeshArn", "Apps")
             };
-            var mergedProps = __assign(__assign({}, defaultProps), props);
-            this.importedResources.appmeshes[name] = appmesh.Mesh.fromMeshArn(this.context, "AppMesh" + name, mergedProps.meshArn);
+            const mergedProps = Object.assign(Object.assign({}, defaultProps), props);
+            this.importedResources.appmeshes[name] = appmesh.Mesh.fromMeshArn(this.context, `AppMesh${name}`, mergedProps.meshArn);
         }
         return this.importedResources.appmeshes[name];
-    };
-    ResourceImport.prototype.importHostedZoneFromCfVpcStack = function (name, type) {
+    }
+    importHostedZoneFromCfVpcStack(name, type) {
         if (!(name in this.importedResources.hostedZones)) {
             this.importedResources.hostedZones[name] = route53.HostedZone.fromHostedZoneAttributes(this.context, name, {
-                hostedZoneId: this.getCfSSMValue(type + "HostedZoneId", "Root"),
-                zoneName: this.getCfSSMValue(type + "HostedZoneTld", "Root"),
+                hostedZoneId: this.getCfSSMValue(`${type}HostedZoneId`, "Root"),
+                zoneName: this.getCfSSMValue(`${type}HostedZoneTld`, "Root"),
             });
         }
         return this.importedResources.hostedZones[name];
-    };
-    ResourceImport.prototype.importHostedZone = function (name, props) {
+    }
+    importHostedZone(name, props) {
         if (!(name in this.importedResources.hostedZones)) {
             this.importedResources.hostedZones[name] = route53.HostedZone.fromHostedZoneAttributes(this.context, name, {
                 hostedZoneId: props.hostedZoneId,
@@ -160,17 +147,16 @@ var ResourceImport = /** @class */ (function () {
             });
         }
         return this.importedResources.hostedZones[name];
-    };
-    ResourceImport.prototype.importRdsInstance = function (name, props) {
-        if (props === void 0) { props = {}; }
+    }
+    importRdsInstance(name, props = {}) {
         if (!(name in this.importedResources.rdsInstances)) {
-            var defaultProps = {
+            const defaultProps = {
                 instanceIdentifier: this.getCfSSMValue("PostgresInstanceIdentifier", "Apps"),
                 instanceEndpointAddress: this.getCfSSMValue("PostgresInstanceHost", "Apps"),
                 securityGroups: [this.importSecuritygroup("RdsInstanceSecurityGroup", this.getCfSSMValue("PostgresInstanceSecurityGroup", "Apps"))],
                 port: 5432
             };
-            var mergedProps = __assign(__assign({}, defaultProps), props);
+            const mergedProps = Object.assign(Object.assign({}, defaultProps), props);
             this.importedResources.rdsInstances[name] = rds.DatabaseInstance.fromDatabaseInstanceAttributes(this.context, name, {
                 instanceIdentifier: mergedProps.instanceIdentifier,
                 instanceEndpointAddress: mergedProps.instanceEndpointAddress,
@@ -179,7 +165,6 @@ var ResourceImport = /** @class */ (function () {
             });
         }
         return this.importedResources.rdsInstances[name];
-    };
-    return ResourceImport;
-}());
+    }
+}
 exports.ResourceImport = ResourceImport;

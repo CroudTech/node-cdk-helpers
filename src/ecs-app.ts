@@ -91,7 +91,8 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
     containers: cdkTypes.ContainersType
     virtualNode: appmesh.VirtualNode
     mesh: appmesh.IMesh
-    taskDefinition: ecs.TaskDefinition
+    taskDefinition: ecs.FargateTaskDefinition
+    appEcrImage: ecs.EcrImage
 
 
     constructor(context: cdk.Stack, props: cdkTypes.EcsApplicationProps) {
@@ -121,6 +122,16 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         return this.logGroup
     }
 
+    protected _createNewLogGroup(name: string): awslogs.LogGroup {
+        const logGroup = new awslogs.LogGroup(this.context, `${name}LogGroup`, {
+            logGroupName: this.resourceName(this._props.name, name),
+            retention: awslogs.RetentionDays.ONE_MONTH,
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
+        })
+
+        return logGroup
+    }
+
     protected _createVirtualNode(): appmesh.VirtualNode {
         if (this.virtualNode == null) {
             this.virtualNode = new appmesh.VirtualNode(this.context, this._resourceName('VirtualNode'), {
@@ -144,7 +155,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         if (this.taskDefinition == null) {
             this.taskDefinition = new ecs.FargateTaskDefinition(this.context, 'TaskDefinition', {
                 cpu: parseInt(this._props.cpu),
-                family: Fn.sub("${Organisation}-${Department}-${Environment}-${AppName}${AppNameSuffix}"),
+                family: this.resourceName(this._props.name, this._props.nameSuffix),
                 memoryLimitMiB: parseInt(this._props.memoryMiB),
                 taskRole: this._taskRole(),
 
@@ -200,11 +211,11 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             var service = new ecs.FargateService(this.context, "Service", {
                 cluster: props.cluster,
                 taskDefinition: props.taskDefinition,
-                serviceName: Fn.sub("${Organisation}-${Department}-${Environment}-${AppName}${AppNameSuffix}"),                
+                serviceName: Fn.sub("${Organisation}-${Department}-${Environment}-${AppName}${AppNameSuffix}"),
                 securityGroup: props.ecsSecurityGroup
             });
         }
-        
+
         service
             .autoScaleTaskCount({
                 minCapacity: 1,
@@ -224,7 +235,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         })
         const ecsSecurityGroup = this.resourceImports.importSecuritygroup("FargateContainerSecurityGroup", this.getCfSSMValue("FargateContainerSecurityGroup", "Root"))
         const clusterArn = ssm.StringParameter.valueForStringParameter(
-            this.context, templates.cfParameterName(this.parameter_name_prefix, "Apps", this._props.ecsClusterSsmKey)); 
+            this.context, templates.cfParameterName(this.parameter_name_prefix, "Apps", this._props.ecsClusterSsmKey));
         const cluster = this.resourceImports.importEcsCluster("EcsCluster", {
             vpc: vpc,
             clusterArn: clusterArn,
@@ -246,9 +257,38 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         })
     }
 
+    protected getEcrImage(name: string, repository?: string, tag?: string): ecs.EcrImage {
+
+        const appEcrImage = new ecs.EcrImage(
+            ecr.Repository.fromRepositoryName(
+                this.context,
+                `EcrRepository${name}`,
+                repository || this._props.applicationEcrRepository,
+            ),
+            tag || "latest"
+        )
+
+        return appEcrImage
+    }
+
+    protected _getAppEnvironment(): string {
+        return this._props.environment.toLowerCase()
+    }
+
+    protected _getEnvironmentVars(env: cdkTypes.EnvironmentType): cdkTypes.EnvironmentType {
+        const defaultEnvironmentVars = {
+            ENVIRONMENT: this._getAppEnvironment(),
+            CONFIG_ENVIRONMENT: this._props.environment,
+            APPNAME: this._props.name,
+            PORT: this._props.appPort.toString(),
+        }
+
+        const environmentVars: cdkTypes.EnvironmentType = { ...env, ...defaultEnvironmentVars }
+        return environmentVars
+    }
+
     protected _addAppContainer(taskDefinition: ecs.TaskDefinition, logGroup: awslogs.ILogGroup) {
-        const repository = ecr.Repository.fromRepositoryName(this.context, "EcrRepository", this.defaultEcsAppParameters.EcsRepositoryName.valueAsString)
-        const image = new ecs.EcrImage(repository, this.defaultEcsAppParameters.EcsRepositoryTag.valueAsString)
+        const image = this.getEcrImage("ApplicationImage", this._props.applicationEcrRepository, this._props.applicationEcrRepositoryTag)
         const dockerLabels: cdkTypes.DockerLabels = {}
         dockerLabels["traefik.http.routers." + this._props.name + ".entrypoints"] = "websecure"
         dockerLabels["traefik.http.routers." + this._props.name + ".tls"] = "true"
@@ -258,21 +298,14 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         } else {
             dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `PathPrefix("${this.defaultEcsAppParameters.ProxyPath?.valueAsString}");`
         }
-        const defaultEnvironmentVars = {
-            ENVIRONMENT: this.defaultEcsAppParameters["AppEnvironment"].valueAsString,
-            CONFIG_ENVIRONMENT: this.defaultParameters["Environment"].valueAsString,
-            APPNAME: this.defaultEcsAppParameters["AppName"].valueAsString,
-            PORT: this._props.appPort.toString(),
-        }
 
-        const environmentVars: cdkTypes.EnvironmentType = { ...this._props.environmentVars, ...defaultEnvironmentVars }
         this.containers["app"] = taskDefinition.addContainer("appContainer", {
             containerName: "app",
             image: image,
             stopTimeout: cdk.Duration.seconds(10),
             command: this._props.command,
             essential: true,
-            environment: environmentVars,
+            environment: this._getEnvironmentVars(this._props.environmentVars),
             portMappings: [
                 {
                     containerPort: this._props.appPort,
@@ -303,7 +336,9 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
     }
 
     protected _addXrayDaemon(taskDefinition: ecs.TaskDefinition, logGroup: awslogs.LogGroup): ecs.ContainerDefinition {
-        this.containers["xray"] = new ecs.ContainerDefinition(this.context, "XrayContainer", {
+        const containerId = `${taskDefinition.toString()}Xray`
+
+        this.containers[containerId] = new ecs.ContainerDefinition(this.context, containerId, {
             image: ecs.ContainerImage.fromRegistry(XRAY_DAEMON_IMAGE),
             user: "1337",
             logging: new ecs.AwsLogDriver({
@@ -320,11 +355,13 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             taskDefinition: taskDefinition,
             containerName: "xray",
         })
-        return this.containers["xray"]
+        return this.containers[containerId]
     }
 
     protected _addCwAgent(taskDefinition: ecs.TaskDefinition, logGroup: awslogs.LogGroup): ecs.ContainerDefinition {
-        this.containers["cwagent"] = new ecs.ContainerDefinition(this.context, "CwAgentContainer", {
+        const containerId = `${taskDefinition.toString()}CwAgent`
+
+        this.containers[containerId] = new ecs.ContainerDefinition(this.context, containerId, {
             image: ecs.ContainerImage.fromRegistry(CLOUDWATCH_AGENT_IMAGE),
             user: '0:1338',
             environment: {
@@ -338,7 +375,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             taskDefinition: taskDefinition,
             containerName: "cwagent",
         })
-        return this.containers["cwagent"]
+        return this.containers[containerId]
     }
 
     protected _addEnvoyProxy(taskDefinition: ecs.TaskDefinition, logGroup: awslogs.LogGroup): ecs.ContainerDefinition {
@@ -346,11 +383,12 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         const region = cdk.Stack.of(this.context).region
         const partition = cdk.Stack.of(this.context).partition;
         const envoyImageOwnerAccount = this.accountIdForRegion(region)
-        const appMeshRepo = ecr.Repository.fromRepositoryAttributes(this.context, `EnvoyRepo`, {
+        const containerId = `${taskDefinition.toString()}EnvoyRepo`
+        const appMeshRepo = ecr.Repository.fromRepositoryAttributes(this.context, containerId, {
             repositoryName: 'aws-appmesh-envoy',
             repositoryArn: `arn:${partition}:ecr:${region}:${envoyImageOwnerAccount}:repository/aws-appmesh-envoy`,
         });
-        this.containers["envoy"] = taskDefinition.addContainer("envoyContainer", {
+        this.containers[containerId] = taskDefinition.addContainer("envoyContainer", {
             containerName: "envoy",
             image: ecs.ContainerImage.fromEcrRepository(appMeshRepo, APP_MESH_ENVOY_SIDECAR_VERSION),
             stopTimeout: cdk.Duration.seconds(10),
@@ -381,20 +419,25 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         });
 
         this.containers["app"].addContainerDependencies({
-            container: this.containers["envoy"],
+            container: this.containers[containerId],
             condition: ecs.ContainerDependencyCondition.HEALTHY
         });
-        return this.containers["envoy"]
+        return this.containers[containerId]
     }
 
-    protected _taskRole() {
-        this.taskRole = new iam.Role(this.context, "ApplicationTaskRole", {
+    protected _taskRole(): iam.Role {
+        this.taskRole = this._createTaskRole("ApplicationTaskRole")
+        return this.taskRole
+    }
+
+    protected _createTaskRole(name: string): iam.Role {
+        const taskRole = new iam.Role(this.context, `TaskRole${name}`, {
             assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
             // roleName: Fn.sub("${Organisation}-${Department}-${Environment}-${AppName}-TR"),
             description: "Role that the api task definitions use to run the api code",
         })
-        this.taskRole.attachInlinePolicy(
-            new iam.Policy(this.context, "ApplicationTaskRolePolicy", {
+        taskRole.attachInlinePolicy(
+            new iam.Policy(this.context, `${name}Policy`, {
                 statements: [
                     // policies to allow access to other AWS services from within the container e.g SES (Simple Email Service)
                     new iam.PolicyStatement({
@@ -405,8 +448,8 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
                             "ssm:GetParameter",
                         ],
                         resources: [
-                            Fn.sub("arn:aws:ssm:eu-west-2:${AWS::AccountId}:parameter/appconfig/${AppName}/${Environment}*"),
-                            Fn.sub("arn:aws:ssm:eu-west-2:${AWS::AccountId}:parameter/appconfig/common/${Environment}*"),
+                            Fn.sub(`arn:aws:ssm:eu-west-2:\${AWS::AccountId}:parameter/appconfig/${this._props.name}/${this._props.environment}*`),
+                            Fn.sub(`arn:aws:ssm:eu-west-2:\${AWS::AccountId}:parameter/appconfig/common/${this._props.environment}*`),
                         ],
                     }),
                     new iam.PolicyStatement({
@@ -423,19 +466,19 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
                 ],
             })
         );
-        this.taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"))
-        this.taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("AWSAppMeshEnvoyAccess"))
-        this.taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("CloudWatchFullAccess"))
-        this.taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("AWSXRayDaemonWriteAccess"))
-        return this.taskRole
+        taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"))
+        taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("AWSAppMeshEnvoyAccess"))
+        taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("CloudWatchFullAccess"))
+        taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("AWSXRayDaemonWriteAccess"))
+        return taskRole
     }
 
-    protected _resourceName(name): string{
+    protected _resourceName(name): string {
         return `${name}${this._props.name}${this._props.nameSuffix}`
     }
 
     protected _defaultEcsAppParameters(): void {
-        
+
         this.defaultEcsAppParameters = {
             "AppName": new CfnParameter(this.context, "AppName", { type: "String", default: this._props.name }),
             "AppNameSuffix": new CfnParameter(this.context, "AppNameSuffix", { type: "String", default: this._props.nameSuffix }),
@@ -459,7 +502,114 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         }
     }
 
+    public resourceName(name: string, suffix: string): string {
+        return `${this._props.organisation}-${this._props.department}-${this._props.environment}-${name}${suffix}`
+    }
+
+    public addUtilityTaskDefinition(name: string, props: cdkTypes.UtilityTaskDefinitionProps): ecs.TaskDefinition {
+        if (props.enableTracing) {
+            var taskDefinition = new ecs.FargateTaskDefinition(this.context, `TaskDefinition${name}`, {
+                cpu: parseInt(this._props.cpu),
+                memoryLimitMiB: parseInt(this._props.memoryMiB),
+                family: this.resourceName(this._props.name, name),
+                taskRole: this._createTaskRole(name),
+                proxyConfiguration: new ecs.AppMeshProxyConfiguration({
+                    containerName: 'envoy',
+                    properties: {
+                        appPorts: [this._props.appPort],
+                        proxyEgressPort: 15001,
+                        proxyIngressPort: 15000,
+                        ignoredUID: 1337,
+                        egressIgnoredIPs: [
+                            '169.254.170.2',
+                            '169.254.169.254'
+                        ]
+                    }
+                })
+            })
+        } else {
+            var taskDefinition = new ecs.FargateTaskDefinition(this.context, `TaskDefinition${name}`, {
+                cpu: parseInt(this._props.cpu),
+                memoryLimitMiB: parseInt(this._props.memoryMiB),
+                family: this.resourceName(this._props.name, name),
+                taskRole: this._createTaskRole(name),
+            })
+        }
+
+
+        const logGroup = this._createNewLogGroup(name)
+        const baseEnvironmentVars = this._getEnvironmentVars(props.environmentVars || this._props.environmentVars)
+        const containers: cdkTypes.ContainerDefinitions = {}
+        for (const containerName in props.containers) {
+            const containerProps = props.containers[containerName]
+            containers[containerName] = taskDefinition.addContainer(`${name}${containerName}`, {
+                containerName: containerName,
+                image: this.getEcrImage(containerName, containerProps.dockerImage, containerProps.dockerTag),
+                stopTimeout: cdk.Duration.seconds(10),
+                command: containerProps.command,
+                essential: true,
+                environment: { ...baseEnvironmentVars, ...containerProps.environmentVars },
+                portMappings: containerProps.portMappings,
+                logging: ecs.LogDriver.awsLogs({
+                    streamPrefix: name,
+                    logGroup: logGroup
+                }),
+            });
+        }
+
+        for (const containerName in props.containers) {
+            const containerProps = props.containers[containerName]
+
+            if (containerProps.dependencies) {
+                for (const dependencyContainer in containerProps.dependencies) {
+                    const dependencyCondition = containerProps.dependencies[dependencyContainer]
+                    if (dependencyContainer in containers && containerName in containers) {
+                        containers[containerName].addContainerDependencies({
+                            condition: ecs.ContainerDependencyCondition[dependencyCondition],
+                            container: containers[dependencyContainer]
+                        })
+                    }
+                }
+            }
+        }
+
+        if (props.enableTracing) {
+            this._addEnvoyProxy(taskDefinition, logGroup)
+            this._addXrayDaemon(taskDefinition, logGroup)
+            this._addCwAgent(taskDefinition, logGroup)
+        }
+
+
+
+
+        return taskDefinition
+    }
+
     protected _outputs(): void {
 
+    }
+}
+
+export class EcsApplicationDjango extends EcsApplication {
+    _createResources() {
+        super._createResources()
+        this._addMigrationTaskDefinition()
+    }
+
+    protected _addMigrationTaskDefinition() {
+        this.addUtilityTaskDefinition('Migrate', {
+            containers: {
+                migrate: {
+                    command: "python manage.py migrate".split(" "),
+                    dependencies: {
+                        "create_db": "COMPLETE"
+                    }
+                },
+                create_db: {
+                    command: "python3 /app/create_postgres.py".split(" "),
+                    dockerImage: "croudtech/db-creator",
+                }
+            }
+        })
     }
 }

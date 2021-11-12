@@ -141,6 +141,7 @@ export interface EcsApplicationProps extends BaseCdkExtensionProps {
     readonly proxyPath?: string
     readonly hostname?: string
     readonly applicationEcrRepository: string
+    readonly applicationEcrRepositoryTag?: string
     readonly appVolumes?: ApplicationVolume[]
     readonly ecsClusterSsmKey: string
     readonly enableCloudmap: boolean
@@ -177,4 +178,29 @@ export interface CreateServiceProps {
     taskDefinition: ecs.TaskDefinition
     cloudmapNamespace: servicediscovery.INamespace
     ecsSecurityGroup: ec2.ISecurityGroup | ec2.SecurityGroup
+}
+
+export type UtilityTaskDefinitionPropsContainerDependency = {
+    [key: string]: string
+}
+export interface UtilityTaskDefinitionPropsContainer {
+    command: string[]
+    dockerImage? : string
+    dockerTag? : string
+    environmentVars? : EnvironmentType
+    portMappings?: ecs.PortMapping[]
+    dependencies?: UtilityTaskDefinitionPropsContainerDependency
+}
+
+export type ContainerDefinitions = {
+    [key:string]: ecs.ContainerDefinition
+}
+
+export type UtilityTaskDefinitionPropsContainers = {
+    [key: string]: UtilityTaskDefinitionPropsContainer
+}
+export interface UtilityTaskDefinitionProps {
+    environmentVars? : EnvironmentType
+    containers: UtilityTaskDefinitionPropsContainers,
+    enableTracing?: boolean
 }

@@ -597,7 +597,7 @@ export class EcsApplicationDjango extends EcsApplication {
     }
 
     protected _addMigrationTaskDefinition() {
-        this.addUtilityTaskDefinition('Migrate', {
+        const migrationTaskDefinition = this.addUtilityTaskDefinition('Migrate', {
             containers: {
                 migrate: {
                     command: "python manage.py migrate".split(" "),
@@ -612,5 +612,25 @@ export class EcsApplicationDjango extends EcsApplication {
                 }
             }
         })
+
+        new ssm.StringParameter(this.context, 'DjangoDbMigrationParameter', {
+            description: 'Migration task parameter',
+            parameterName: templates.cfParameterName(this.parameter_name_prefix, this._props.name, "MigrationTaskArn"),
+            stringValue:  migrationTaskDefinition.taskDefinitionArn,
+            tier: ssm.ParameterTier.INTELLIGENT_TIERING,
+        });
     }
 }
+
+// SSMParameterTaskDefinitionSetup:
+//     Type: AWS::SSM::Parameter
+//     Properties:
+//       Name: !Join ["/", ["", "CfParameters", !Join [ '/', !Split [ '-', !Ref AWS::StackName ] ], "TaskDefinitionSetup"]]
+//       Value: !Ref TaskDefinitionSetup
+//       Type: String
+//       Tier: Intelligent-Tiering
+//       Tags:
+//         CfStackName: !Ref AWS::StackName
+//         Organisation: !Ref Organisation
+//         Department: !Ref Department
+//         Environment: !Ref Environment

@@ -567,6 +567,7 @@ class EcsApplicationDjango extends EcsApplication {
                 create_db: {
                     command: "python3 /app/create_postgres.py".split(" "),
                     dockerImage: "croudtech/db-creator",
+                    dockerTag: "latest",
                     essential: false,
                 }
             }

@@ -431,9 +431,9 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
                     "curl -s http://localhost:9901/server_info | grep state | grep -q LIVE"
                 ],
                 retries: 3,
-                timeout: cdk.Duration.seconds(2),
-                interval: cdk.Duration.seconds(5),
-                startPeriod: cdk.Duration.seconds(10)
+                timeout: cdk.Duration.seconds(5),
+                interval: cdk.Duration.seconds(10),
+                startPeriod: cdk.Duration.seconds(15)
             },
             logging: ecs.LogDriver.awsLogs({
                 streamPrefix: "envoy-" + this.defaultEcsAppParameters.AppName.valueAsString,

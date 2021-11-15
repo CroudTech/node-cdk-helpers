@@ -18,7 +18,10 @@ class CdkHelpers extends cdkBase.BaseCdkResourceExtension {
     addTags() {
         this.defaultTags.forEach(tag => {
             if (tag in this.defaultParameters) {
-                var tagValue = this.defaultParameters[tag].toString();
+                var tagValue = this.defaultParameters[tag].valueAsString;
+            }
+            else {
+                var tagValue = "Unspecified";
             }
             cdk.Tags.of(this.context).add(tag, tagValue, {
                 priority: 300

@@ -239,7 +239,7 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         });
     }
     getEcrImage(name, repository, tag) {
-        const appEcrImage = new ecs.EcrImage(ecr.Repository.fromRepositoryName(this.context, `EcrRepository${name}`, repository || this._props.applicationEcrRepository), tag || "latest");
+        const appEcrImage = new ecs.EcrImage(ecr.Repository.fromRepositoryName(this.context, `EcrRepository${name}`, repository || this._props.applicationEcrRepository), tag || this._props.applicationEcrRepositoryTag || "latest");
         return appEcrImage;
     }
     _getAppEnvironment() {

@@ -288,7 +288,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
                 `EcrRepository${name}`,
                 repository || this._props.applicationEcrRepository,
             ),
-            tag || "latest"
+            tag || this._props.applicationEcrRepositoryTag || "latest"
         )
 
         return appEcrImage

@@ -38,7 +38,6 @@ class EcsApplicationInit extends cdkBase.BaseCdkResourceExtension {
             "Organisation",
             "Environment",
             "Department",
-            "AppName",
         ];
         this._createResources();
         this.addTags();

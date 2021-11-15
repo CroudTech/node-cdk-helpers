@@ -45,7 +45,6 @@ export class EcsApplicationInit extends cdkBase.BaseCdkResourceExtension {
             "Organisation",
             "Environment",
             "Department",
-            "AppName",
         ]
 
         this._createResources()

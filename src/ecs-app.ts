@@ -547,7 +547,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
                 image: this.getEcrImage(containerName, containerProps.dockerImage, containerProps.dockerTag),
                 stopTimeout: cdk.Duration.seconds(10),
                 command: containerProps.command,
-                essential: true,
+                essential: containerProps.essential,
                 environment: { ...baseEnvironmentVars, ...containerProps.environmentVars },
                 portMappings: containerProps.portMappings,
                 logging: ecs.LogDriver.awsLogs({
@@ -608,6 +608,7 @@ export class EcsApplicationDjango extends EcsApplication {
                 create_db: {
                     command: "python3 /app/create_postgres.py".split(" "),
                     dockerImage: "croudtech/db-creator",
+                    essential: false,
                 }
             }
         })

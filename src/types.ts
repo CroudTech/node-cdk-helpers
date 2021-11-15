@@ -187,6 +187,7 @@ export interface UtilityTaskDefinitionPropsContainer {
     command: string[]
     dockerImage? : string
     dockerTag? : string
+    essential? : boolean
     environmentVars? : EnvironmentType
     portMappings?: ecs.PortMapping[]
     dependencies?: UtilityTaskDefinitionPropsContainerDependency

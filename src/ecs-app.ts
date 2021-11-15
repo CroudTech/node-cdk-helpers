@@ -16,6 +16,18 @@ const CLOUDWATCH_AGENT_IMAGE = 'amazon/cloudwatch-agent:latest';
 const APP_MESH_ENVOY_SIDECAR_VERSION = 'v1.15.1.0-prod';
 
 export class CdkHelpers extends cdkBase.BaseCdkResourceExtension {
+    addTags() {
+        
+        this.defaultTags.forEach(tag => {
+            if (tag in this.defaultParameters) {
+                var tagValue = this.defaultParameters[tag].toString()
+            }
+            cdk.Tags.of(this.context).add(tag, tagValue, {
+                priority: 300
+            });
+        });
+    }
+
     _createResources() {
 
     }
@@ -38,6 +50,18 @@ export class EcsApplicationInit extends cdkBase.BaseCdkResourceExtension {
 
         this._createResources()
         this.addTags()
+    }
+
+    addTags() {
+        
+        this.defaultTags.forEach(tag => {
+            if (tag in this.defaultParameters) {
+                var tagValue = this.defaultParameters[tag].toString()
+            }
+            cdk.Tags.of(this.context).add(tag, tagValue, {
+                priority: 300
+            });
+        });
     }
 
     protected _createResources(): void {
@@ -583,6 +607,22 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
 
 
         return taskDefinition
+    }
+
+    addTags() {
+        
+        this.defaultTags.forEach(tag => {
+            if (tag in this.defaultParameters) {
+                var tagValue = this.defaultParameters[tag].toString()
+            } else if (tag in this.defaultEcsAppParameters) {
+                var tagValue = this.defaultEcsAppParameters[tag].toString()
+            } else {
+                tagValue = "Null"
+            }
+            cdk.Tags.of(this.context).add(tag, tagValue, {
+                priority: 300
+            });
+        });
     }
 
     protected _outputs(): void {

@@ -42,12 +42,5 @@ class BaseCdkResourceExtension extends BaseCdkExtension {
         this.defaultParameters = baseStackDefaults.defaultParameters;
         this.resourceImports = new resourceImports.ResourceImport(this.context, props);
     }
-    addTags() {
-        this.defaultTags.forEach(tag => {
-            cdk.Tags.of(this.context).add(tag, cdk.Fn.ref(tag), {
-                priority: 300
-            });
-        });
-    }
 }
 exports.BaseCdkResourceExtension = BaseCdkResourceExtension;

@@ -612,11 +612,11 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         
         this.defaultTags.forEach(tag => {
             if (tag in this.defaultParameters) {
-                var tagValue = this.defaultParameters[tag].toString()
+                var tagValue = this.defaultParameters[tag].valueAsString
             } else if (tag in this.defaultEcsAppParameters) {
-                var tagValue = this.defaultEcsAppParameters[tag].toString()
+                var tagValue = this.defaultEcsAppParameters[tag].valueAsString
             } else {
-                tagValue = "Null"
+                tagValue = "Unspecified"
             }
             cdk.Tags.of(this.context).add(tag, tagValue, {
                 priority: 300

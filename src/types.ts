@@ -145,6 +145,7 @@ export interface EcsApplicationProps extends BaseCdkExtensionProps {
     readonly appVolumes?: ApplicationVolume[]
     readonly ecsClusterSsmKey: string
     readonly enableCloudmap: boolean
+    readonly enableIngress?: boolean
 }
 
 export interface defaultParameters {

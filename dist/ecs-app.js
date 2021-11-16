@@ -96,7 +96,10 @@ exports.EcsApplicationInit = EcsApplicationInit;
 class EcsApplication extends cdkBase.BaseCdkResourceExtension {
     constructor(context, props) {
         super(context, props);
-        this._props = props;
+        this.defaultProps = {
+            enableIngress: true
+        };
+        this._props = Object.assign(Object.assign({}, this.defaultProps), props);
         this._defaultEcsAppParameters();
         this._outputs();
         this.defaultTags = [
@@ -262,14 +265,16 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         var _a, _b, _c;
         const image = this.getEcrImage("ApplicationImage", this._props.applicationEcrRepository, this._props.applicationEcrRepositoryTag);
         const dockerLabels = {};
-        dockerLabels["traefik.http.routers." + this._props.name + ".entrypoints"] = "websecure";
-        dockerLabels["traefik.http.routers." + this._props.name + ".tls"] = "true";
-        if ("hostname" in this._props) {
-            const hostnameTld = this.getCfSSMValue("AlbHostname", "EcsIngress");
-            dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `Host("${(_a = this.defaultEcsAppParameters.Hostname) === null || _a === void 0 ? void 0 : _a.valueAsString}.${hostnameTld}") && PathPrefix("${this.defaultEcsAppParameters.ProxyPath.valueAsString}")`;
-        }
-        else {
-            dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `PathPrefix("${(_b = this.defaultEcsAppParameters.ProxyPath) === null || _b === void 0 ? void 0 : _b.valueAsString}");`;
+        if (this._props.enableIngress) {
+            dockerLabels["traefik.http.routers." + this._props.name + ".entrypoints"] = "websecure";
+            dockerLabels["traefik.http.routers." + this._props.name + ".tls"] = "true";
+            if ("hostname" in this._props) {
+                const hostnameTld = this.getCfSSMValue("AlbHostname", "EcsIngress");
+                dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `Host("${(_a = this.defaultEcsAppParameters.Hostname) === null || _a === void 0 ? void 0 : _a.valueAsString}.${hostnameTld}") && PathPrefix("${this.defaultEcsAppParameters.ProxyPath.valueAsString}")`;
+            }
+            else {
+                dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `PathPrefix("${(_b = this.defaultEcsAppParameters.ProxyPath) === null || _b === void 0 ? void 0 : _b.valueAsString}");`;
+            }
         }
         this.containers["app"] = taskDefinition.addContainer("appContainer", {
             containerName: "app",

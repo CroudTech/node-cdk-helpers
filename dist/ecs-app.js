@@ -262,7 +262,7 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         return environmentVars;
     }
     _addAppContainer(taskDefinition, logGroup) {
-        var _a, _b, _c;
+        var _a;
         const image = this.getEcrImage("ApplicationImage", this._props.applicationEcrRepository, this._props.applicationEcrRepositoryTag);
         const dockerLabels = {};
         if (this._props.enableIngress) {
@@ -270,10 +270,10 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             dockerLabels["traefik.http.routers." + this._props.name + ".tls"] = "true";
             if ("hostname" in this._props) {
                 const hostnameTld = this.getCfSSMValue("AlbHostname", "EcsIngress");
-                dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `Host("${(_a = this.defaultEcsAppParameters.Hostname) === null || _a === void 0 ? void 0 : _a.valueAsString}.${hostnameTld}") && PathPrefix("${this.defaultEcsAppParameters.ProxyPath.valueAsString}")`;
+                dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `Host("${this._props.hostname}.${hostnameTld}") && PathPrefix("${this._props.proxyPath}")`;
             }
             else {
-                dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `PathPrefix("${(_b = this.defaultEcsAppParameters.ProxyPath) === null || _b === void 0 ? void 0 : _b.valueAsString}");`;
+                dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `PathPrefix("${this._props.proxyPath}");`;
             }
         }
         this.containers["app"] = taskDefinition.addContainer("appContainer", {
@@ -295,7 +295,7 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             }),
             dockerLabels: dockerLabels,
         });
-        (_c = this._props.appVolumes) === null || _c === void 0 ? void 0 : _c.forEach(volume => {
+        (_a = this._props.appVolumes) === null || _a === void 0 ? void 0 : _a.forEach(volume => {
             taskDefinition.addVolume({
                 efsVolumeConfiguration: {
                     fileSystemId: this.defaultEcsAppParameters.EfsFilesystemId.valueAsString,
@@ -447,7 +447,6 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             "AppName": new core_1.CfnParameter(this.context, "AppName", { type: "String", default: this._props.name }),
             "AppNameSuffix": new core_1.CfnParameter(this.context, "AppNameSuffix", { type: "String", default: this._props.nameSuffix }),
             "AppPort": new core_1.CfnParameter(this.context, "AppPort", { type: "Number", default: this._props.appPort }),
-            "ProxyPath": new core_1.CfnParameter(this.context, "ProxyPath", { type: "String", default: this._props.proxyPath }),
             "AppEnvironment": new core_1.CfnParameter(this.context, "AppEnvironment", { type: "String", default: (_a = process.env["ENVIRONMENT"]) === null || _a === void 0 ? void 0 : _a.toLowerCase() }),
             "EcsRepositoryName": new core_1.CfnParameter(this.context, "EcsRepositoryName", { type: "String", default: this._props.applicationEcrRepository }),
             "ServiceDiscoveryName": new core_1.CfnParameter(this.context, "ServiceDiscoveryName", { type: "String", default: this._props.name }),
@@ -460,9 +459,6 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         };
         if (this._props.envoyProxy) {
             this.defaultEcsAppParameters["MeshArn"] = new core_1.CfnParameter(this.context, "MeshArn", { type: "AWS::SSM::Parameter::Value<String>", default: templates.cfParameterName(this.parameter_name_prefix, "Apps", "AppMeshArn") });
-        }
-        if (this._props.hostname) {
-            this.defaultEcsAppParameters["Hostname"] = new core_1.CfnParameter(this.context, "Hostname", { type: "String", default: this._props.hostname });
         }
     }
     resourceName(name, suffix) {

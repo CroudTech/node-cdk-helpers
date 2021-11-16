@@ -323,9 +323,9 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             dockerLabels["traefik.http.routers." + this._props.name + ".tls"] = "true"
             if ("hostname" in this._props) {
                 const hostnameTld = this.getCfSSMValue("AlbHostname", "EcsIngress")
-                dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `Host("${this.defaultEcsAppParameters.Hostname?.valueAsString}.${hostnameTld}") && PathPrefix("${this.defaultEcsAppParameters.ProxyPath.valueAsString}")`
+                dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `Host("${this._props.hostname}.${hostnameTld}") && PathPrefix("${this._props.proxyPath}")`
             } else {
-                dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `PathPrefix("${this.defaultEcsAppParameters.ProxyPath?.valueAsString}");`
+                dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `PathPrefix("${this._props.proxyPath}");`
             }
         }
 
@@ -513,7 +513,6 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             "AppName": new CfnParameter(this.context, "AppName", { type: "String", default: this._props.name }),
             "AppNameSuffix": new CfnParameter(this.context, "AppNameSuffix", { type: "String", default: this._props.nameSuffix }),
             "AppPort": new CfnParameter(this.context, "AppPort", { type: "Number", default: this._props.appPort }),
-            "ProxyPath": new CfnParameter(this.context, "ProxyPath", { type: "String", default: this._props.proxyPath }),
             "AppEnvironment": new CfnParameter(this.context, "AppEnvironment", { type: "String", default: process.env["ENVIRONMENT"]?.toLowerCase() }),
             "EcsRepositoryName": new CfnParameter(this.context, "EcsRepositoryName", { type: "String", default: this._props.applicationEcrRepository }),
             "ServiceDiscoveryName": new CfnParameter(this.context, "ServiceDiscoveryName", { type: "String", default: this._props.name }),
@@ -526,9 +525,6 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         }
         if (this._props.envoyProxy) {
             this.defaultEcsAppParameters["MeshArn"] = new CfnParameter(this.context, "MeshArn", { type: "AWS::SSM::Parameter::Value<String>", default: templates.cfParameterName(this.parameter_name_prefix, "Apps", "AppMeshArn") })
-        }
-        if (this._props.hostname) {
-            this.defaultEcsAppParameters["Hostname"] = new CfnParameter(this.context, "Hostname", { type: "String", default: this._props.hostname })
         }
     }
 

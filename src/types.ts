@@ -165,8 +165,6 @@ export interface defaultEcsAppParameters {
     ServiceDiscoveryName: cdk.CfnParameter
     ClusterName: cdk.CfnParameter
     EfsFilesystemId: cdk.CfnParameter
-    ProxyPath: cdk.CfnParameter
-    Hostname?: cdk.CfnParameter
 };
 
 export interface defaultEcsInitParameters {

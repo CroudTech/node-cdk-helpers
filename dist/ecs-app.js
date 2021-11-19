@@ -18,7 +18,7 @@ class CdkHelpers extends cdkBase.BaseCdkResourceExtension {
     addTags() {
         this.defaultTags.forEach(tag => {
             if (tag in this.defaultParameters) {
-                var tagValue = core_1.Fn.sub(tag);
+                var tagValue = core_1.Fn.ref(tag);
             }
             else {
                 var tagValue = "Unspecified";
@@ -48,7 +48,7 @@ class EcsApplicationInit extends cdkBase.BaseCdkResourceExtension {
     addTags() {
         this.defaultTags.forEach(tag => {
             if (tag in this.defaultParameters) {
-                var tagValue = core_1.Fn.sub(tag);
+                var tagValue = core_1.Fn.ref(tag);
             }
             cdk.Tags.of(this.context).add(tag, tagValue, {
                 priority: 300
@@ -544,10 +544,10 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
     addTags() {
         this.defaultTags.forEach(tag => {
             if (tag in this.defaultParameters) {
-                var tagValue = core_1.Fn.sub(tag);
+                var tagValue = core_1.Fn.ref(tag);
             }
             else if (tag in this.defaultEcsAppParameters) {
-                var tagValue = core_1.Fn.sub(tag);
+                var tagValue = core_1.Fn.ref(tag);
             }
             else {
                 tagValue = "Unspecified";

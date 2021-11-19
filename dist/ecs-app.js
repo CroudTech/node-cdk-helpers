@@ -97,7 +97,8 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
     constructor(context, props) {
         super(context, props);
         this.defaultProps = {
-            enableIngress: true
+            enableIngress: true,
+            appContainerName: "app",
         };
         this._props = Object.assign(Object.assign({}, this.defaultProps), props);
         this._defaultEcsAppParameters();
@@ -277,7 +278,7 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             }
         }
         this.containers["app"] = taskDefinition.addContainer("appContainer", {
-            containerName: "app",
+            containerName: this._props.appContainerName,
             image: image,
             stopTimeout: cdk.Duration.seconds(10),
             command: this._props.command,
@@ -290,7 +291,7 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
                 }
             ],
             logging: ecs.LogDriver.awsLogs({
-                streamPrefix: "app-" + this.defaultEcsAppParameters.AppName.valueAsString,
+                streamPrefix: this._props.appContainerName + "-" + this.defaultEcsAppParameters.AppName.valueAsString,
                 logGroup: logGroup
             }),
             dockerLabels: dockerLabels,

@@ -622,19 +622,18 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         return taskDefinition
     }
 
-    addTags() {
-        
-        this.defaultTags.forEach(tag => {
-            if (tag in this.defaultParameters) {
-                var tagValue = Fn.ref(tag)
-            } else if (tag in this.defaultEcsAppParameters) {
-                var tagValue = Fn.ref(tag)
-            } else {
-                tagValue = "Unspecified"
-            }
-            cdk.Tags.of(this.context).add(tag, tagValue, {
-                priority: 100
-            });
+    addTags() {        
+        cdk.Tags.of(this.context).add("Organisation", this._props.organisation, {
+            priority: 100
+        });
+        cdk.Tags.of(this.context).add("Department", this._props.department, {
+            priority: 100
+        });
+        cdk.Tags.of(this.context).add("Environment", this._props.environment, {
+            priority: 100
+        });
+        cdk.Tags.of(this.context).add("AppName", this._props.name, {
+            priority: 100
         });
     }
 

@@ -293,7 +293,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         })
     }
 
-    protected getEcrImage(name: string, repository?: string, tag?: string): ecs.EcrImage {
+    public getEcrImage(name: string, repository?: string, tag?: string): ecs.EcrImage {
 
         const appEcrImage = new ecs.EcrImage(
             ecr.Repository.fromRepositoryName(
@@ -311,7 +311,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         return this._props.environment.toLowerCase()
     }
 
-    protected _getEnvironmentVars(env: cdkTypes.EnvironmentType): cdkTypes.EnvironmentType {
+    public getEnvironmentVars(env: cdkTypes.EnvironmentType): cdkTypes.EnvironmentType {
         const defaultEnvironmentVars = {
             ENVIRONMENT: this._getAppEnvironment(),
             CONFIG_ENVIRONMENT: this._props.environment,
@@ -353,7 +353,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             stopTimeout: cdk.Duration.seconds(10),
             command: this._props.command,
             essential: true,
-            environment: this._getEnvironmentVars(this._props.environmentVars),
+            environment: this.getEnvironmentVars(this._props.environmentVars),
             portMappings: portMappings,
             logging: ecs.LogDriver.awsLogs({
                 streamPrefix: this._props.appContainerName + "-" + this.defaultEcsAppParameters.AppName.valueAsString,
@@ -577,7 +577,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
 
 
         const logGroup = this._createNewLogGroup(name)
-        const baseEnvironmentVars = this._getEnvironmentVars(props.environmentVars || this._props.environmentVars)
+        const baseEnvironmentVars = this.getEnvironmentVars(props.environmentVars || this._props.environmentVars)
         const containers: cdkTypes.ContainerDefinitions = {}
         for (const containerName in props.containers) {
             const containerProps = props.containers[containerName]

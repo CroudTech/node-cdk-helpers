@@ -258,7 +258,7 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
     _getAppEnvironment() {
         return this._props.environment.toLowerCase();
     }
-    _getEnvironmentVars(env) {
+    getEnvironmentVars(env) {
         const defaultEnvironmentVars = {
             ENVIRONMENT: this._getAppEnvironment(),
             CONFIG_ENVIRONMENT: this._props.environment,
@@ -296,7 +296,7 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             stopTimeout: cdk.Duration.seconds(10),
             command: this._props.command,
             essential: true,
-            environment: this._getEnvironmentVars(this._props.environmentVars),
+            environment: this.getEnvironmentVars(this._props.environmentVars),
             portMappings: portMappings,
             logging: ecs.LogDriver.awsLogs({
                 streamPrefix: this._props.appContainerName + "-" + this.defaultEcsAppParameters.AppName.valueAsString,
@@ -504,7 +504,7 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             });
         }
         const logGroup = this._createNewLogGroup(name);
-        const baseEnvironmentVars = this._getEnvironmentVars(props.environmentVars || this._props.environmentVars);
+        const baseEnvironmentVars = this.getEnvironmentVars(props.environmentVars || this._props.environmentVars);
         const containers = {};
         for (const containerName in props.containers) {
             const containerProps = props.containers[containerName];

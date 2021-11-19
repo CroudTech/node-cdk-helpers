@@ -11,7 +11,7 @@ import * as iam from "@aws-cdk/aws-iam"
 import * as templates from "./templates"
 import * as ssm from '@aws-cdk/aws-ssm';
 
-const XRAY_DAEMON_IMAGE = 'amazon/aws-xray-daemon:latest';
+const XRAY_DAEMON_IMAGE = 'public.ecr.aws/xray/aws-xray-daemon:latest';
 const CLOUDWATCH_AGENT_IMAGE = 'amazon/cloudwatch-agent:latest';
 const APP_MESH_ENVOY_SIDECAR_VERSION = 'v1.15.1.0-prod';
 

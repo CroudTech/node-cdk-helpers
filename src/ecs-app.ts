@@ -25,7 +25,7 @@ export class CdkHelpers extends cdkBase.BaseCdkResourceExtension {
                 var tagValue = "Unspecified"
             }
             cdk.Tags.of(this.context).add(tag, tagValue, {
-                priority: 300
+                priority: 100
             });
         });
     }
@@ -60,7 +60,7 @@ export class EcsApplicationInit extends cdkBase.BaseCdkResourceExtension {
                 var tagValue = Fn.ref(tag)
             }
             cdk.Tags.of(this.context).add(tag, tagValue, {
-                priority: 300
+                priority: 100
             });
         });
     }
@@ -143,7 +143,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
 
     protected _createLogGroup(): awslogs.LogGroup {
         if (this.logGroup == null) {
-            this.logGroup = new awslogs.LogGroup(this.context, `ApplicationLogGroup`, {
+            this.logGroup = new awslogs.LogGroup(this.context, `AppLogGroup`, {
                 logGroupName: Fn.sub("${Organisation}-${Department}-${Environment}-EcsServiceLogs-${AppName}${AppNameSuffix}"),
                 retention: awslogs.RetentionDays.ONE_MONTH,
                 removalPolicy: cdk.RemovalPolicy.DESTROY,
@@ -633,7 +633,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
                 tagValue = "Unspecified"
             }
             cdk.Tags.of(this.context).add(tag, tagValue, {
-                priority: 300
+                priority: 100
             });
         });
     }

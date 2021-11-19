@@ -164,16 +164,14 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
 
     protected _createVirtualNode(): appmesh.VirtualNode {
         if (this.virtualNode == null) {
-            var listeners:appmesh.VirtualNodeListener[] = []
-            this.appPorts().forEach(port => {
-                listeners.push(appmesh.VirtualNodeListener.http({
-                    port: port
-                }))
-            })
             this.virtualNode = new appmesh.VirtualNode(this.context, this._resourceName('VirtualNode'), {
                 mesh: this.resourceImports.importMesh("DefaultAppMesh"),
                 virtualNodeName: Fn.sub("${Organisation}-${Department}-${Environment}-${AppName}${AppNameSuffix}"),
-                listeners: listeners,
+                listeners: [
+                    appmesh.VirtualNodeListener.http({
+                        port: this._props.appPort
+                    })
+                ],
                 serviceDiscovery: appmesh.ServiceDiscovery.dns(
                     this.defaultEcsAppParameters["ServiceDiscoveryName"].valueAsString + "." + this.getCfSSMValue("ECSServiceDiscoveryDomainName", "Apps"),
                 ),

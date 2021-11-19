@@ -354,12 +354,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             command: this._props.command,
             essential: true,
             environment: this._getEnvironmentVars(this._props.environmentVars),
-            portMappings: [
-                {
-                    containerPort: this._props.appPort,
-                    protocol: ecs.Protocol.TCP
-                }
-            ],
+            portMappings: portMappings,
             logging: ecs.LogDriver.awsLogs({
                 streamPrefix: this._props.appContainerName + "-" + this.defaultEcsAppParameters.AppName.valueAsString,
                 logGroup: logGroup

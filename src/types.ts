@@ -134,7 +134,7 @@ export interface EcsApplicationProps extends BaseCdkExtensionProps {
     readonly cpu: string
     readonly envoyProxy?: boolean
     readonly memoryMiB: string
-    readonly command?: string[]
+    readonly command?: string[] | undefined
     readonly appPort: number
     readonly appHealthCheckPath: string
     readonly environmentVars?: EnvironmentType

@@ -20,7 +20,7 @@ export class CdkHelpers extends cdkBase.BaseCdkResourceExtension {
         
         this.defaultTags.forEach(tag => {
             if (tag in this.defaultParameters) {
-                var tagValue = this.defaultParameters[tag].valueAsString
+                var tagValue = Fn.sub(tag)
             } else {
                 var tagValue = "Unspecified"
             }
@@ -57,7 +57,7 @@ export class EcsApplicationInit extends cdkBase.BaseCdkResourceExtension {
         
         this.defaultTags.forEach(tag => {
             if (tag in this.defaultParameters) {
-                var tagValue = this.defaultParameters[tag].valueAsString
+                var tagValue = Fn.sub(tag)
             }
             cdk.Tags.of(this.context).add(tag, tagValue, {
                 priority: 300
@@ -626,9 +626,9 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         
         this.defaultTags.forEach(tag => {
             if (tag in this.defaultParameters) {
-                var tagValue = this.defaultParameters[tag].valueAsString
+                var tagValue = Fn.sub(tag)
             } else if (tag in this.defaultEcsAppParameters) {
-                var tagValue = this.defaultEcsAppParameters[tag].valueAsString
+                var tagValue = Fn.sub(tag)
             } else {
                 tagValue = "Unspecified"
             }
@@ -675,16 +675,3 @@ export class EcsApplicationDjango extends EcsApplication {
         });
     }
 }
-
-// SSMParameterTaskDefinitionSetup:
-//     Type: AWS::SSM::Parameter
-//     Properties:
-//       Name: !Join ["/", ["", "CfParameters", !Join [ '/', !Split [ '-', !Ref AWS::StackName ] ], "TaskDefinitionSetup"]]
-//       Value: !Ref TaskDefinitionSetup
-//       Type: String
-//       Tier: Intelligent-Tiering
-//       Tags:
-//         CfStackName: !Ref AWS::StackName
-//         Organisation: !Ref Organisation
-//         Department: !Ref Department
-//         Environment: !Ref Environment

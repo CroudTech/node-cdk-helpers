@@ -18,7 +18,7 @@ class CdkHelpers extends cdkBase.BaseCdkResourceExtension {
     addTags() {
         this.defaultTags.forEach(tag => {
             if (tag in this.defaultParameters) {
-                var tagValue = this.defaultParameters[tag].valueAsString;
+                var tagValue = core_1.Fn.sub(tag);
             }
             else {
                 var tagValue = "Unspecified";
@@ -48,7 +48,7 @@ class EcsApplicationInit extends cdkBase.BaseCdkResourceExtension {
     addTags() {
         this.defaultTags.forEach(tag => {
             if (tag in this.defaultParameters) {
-                var tagValue = this.defaultParameters[tag].valueAsString;
+                var tagValue = core_1.Fn.sub(tag);
             }
             cdk.Tags.of(this.context).add(tag, tagValue, {
                 priority: 300
@@ -544,10 +544,10 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
     addTags() {
         this.defaultTags.forEach(tag => {
             if (tag in this.defaultParameters) {
-                var tagValue = this.defaultParameters[tag].valueAsString;
+                var tagValue = core_1.Fn.sub(tag);
             }
             else if (tag in this.defaultEcsAppParameters) {
-                var tagValue = this.defaultEcsAppParameters[tag].valueAsString;
+                var tagValue = core_1.Fn.sub(tag);
             }
             else {
                 tagValue = "Unspecified";
@@ -592,15 +592,3 @@ class EcsApplicationDjango extends EcsApplication {
     }
 }
 exports.EcsApplicationDjango = EcsApplicationDjango;
-// SSMParameterTaskDefinitionSetup:
-//     Type: AWS::SSM::Parameter
-//     Properties:
-//       Name: !Join ["/", ["", "CfParameters", !Join [ '/', !Split [ '-', !Ref AWS::StackName ] ], "TaskDefinitionSetup"]]
-//       Value: !Ref TaskDefinitionSetup
-//       Type: String
-//       Tier: Intelligent-Tiering
-//       Tags:
-//         CfStackName: !Ref AWS::StackName
-//         Organisation: !Ref Organisation
-//         Department: !Ref Department
-//         Environment: !Ref Environment

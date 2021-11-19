@@ -48,7 +48,7 @@ class EcsApplicationInit extends cdkBase.BaseCdkResourceExtension {
     addTags() {
         this.defaultTags.forEach(tag => {
             if (tag in this.defaultParameters) {
-                var tagValue = this.defaultParameters[tag].toString();
+                var tagValue = this.defaultParameters[tag].valueAsString;
             }
             cdk.Tags.of(this.context).add(tag, tagValue, {
                 priority: 300

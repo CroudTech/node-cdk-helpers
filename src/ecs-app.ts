@@ -122,6 +122,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
     defaultProps: Partial<cdkTypes.EcsApplicationProps> = {
         enableIngress: true,
         appContainerName: "app",
+        extraPorts: []
     }
 
     constructor(context: cdk.Stack, props: cdkTypes.EcsApplicationProps) {
@@ -163,14 +164,16 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
 
     protected _createVirtualNode(): appmesh.VirtualNode {
         if (this.virtualNode == null) {
+            var listeners:appmesh.VirtualNodeListener[] = []
+            this.appPorts().forEach(port => {
+                listeners.push(appmesh.VirtualNodeListener.http({
+                    port: port
+                }))
+            })
             this.virtualNode = new appmesh.VirtualNode(this.context, this._resourceName('VirtualNode'), {
                 mesh: this.resourceImports.importMesh("DefaultAppMesh"),
                 virtualNodeName: Fn.sub("${Organisation}-${Department}-${Environment}-${AppName}${AppNameSuffix}"),
-                listeners: [
-                    appmesh.VirtualNodeListener.http({
-                        port: this.defaultEcsAppParameters.AppPort.valueAsNumber
-                    })
-                ],
+                listeners: listeners,
                 serviceDiscovery: appmesh.ServiceDiscovery.dns(
                     this.defaultEcsAppParameters["ServiceDiscoveryName"].valueAsString + "." + this.getCfSSMValue("ECSServiceDiscoveryDomainName", "Apps"),
                 ),
@@ -178,6 +181,10 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             });
         }
         return this.virtualNode
+    }
+
+    protected appPorts(): number[] {
+        return [this._props.appPort, ...this._props.extraPorts]
     }
 
     protected _createTaskDefinition(): ecs.TaskDefinition {
@@ -191,7 +198,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
                 proxyConfiguration: new ecs.AppMeshProxyConfiguration({
                     containerName: 'envoy',
                     properties: {
-                        appPorts: [this._props.appPort],
+                        appPorts: this.appPorts(),
                         proxyEgressPort: 15001,
                         proxyIngressPort: 15000,
                         ignoredUID: 1337,
@@ -329,6 +336,16 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
                 dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `PathPrefix("${this._props.proxyPath}");`
             }
         }
+
+        var portMappings:ecs.PortMapping[] = []
+        this.appPorts().forEach(port => {
+            portMappings.push(
+                {
+                    containerPort: port,
+                    protocol: ecs.Protocol.TCP
+                }
+            )
+        })
 
         this.containers["app"] = taskDefinition.addContainer("appContainer", {
             containerName: this._props.appContainerName,

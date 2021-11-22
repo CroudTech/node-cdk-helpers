@@ -11,8 +11,8 @@ import * as iam from "@aws-cdk/aws-iam"
 import * as templates from "./templates"
 import * as ssm from '@aws-cdk/aws-ssm';
 
-const XRAY_DAEMON_IMAGE = 'public.ecr.aws/xray/aws-xray-daemon:latest';
-const CLOUDWATCH_AGENT_IMAGE = 'amazon/cloudwatch-agent:latest';
+const XRAY_DAEMON_IMAGE = 'infrastructure/xray';
+const CLOUDWATCH_AGENT_IMAGE = 'infrastructure/cwagent';
 const APP_MESH_ENVOY_SIDECAR_VERSION = 'v1.15.1.0-prod';
 
 export class CdkHelpers extends cdkBase.BaseCdkResourceExtension {
@@ -378,9 +378,10 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
 
     protected _addXrayDaemon(taskDefinition: ecs.TaskDefinition, logGroup: awslogs.LogGroup): ecs.ContainerDefinition {
         const containerId = `${taskDefinition.toString()}Xray`
-
+        const registry = ecr.Repository.fromRepositoryName(this.context, "XrayRepository", XRAY_DAEMON_IMAGE)
+        
         this.containers[containerId] = new ecs.ContainerDefinition(this.context, containerId, {
-            image: ecs.ContainerImage.fromRegistry(XRAY_DAEMON_IMAGE),
+            image: ecs.ContainerImage.fromEcrRepository(registry, 'latest'),
             user: "1337",
             logging: new ecs.AwsLogDriver({
                 logGroup: logGroup,
@@ -401,9 +402,10 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
 
     protected _addCwAgent(taskDefinition: ecs.TaskDefinition, logGroup: awslogs.LogGroup): ecs.ContainerDefinition {
         const containerId = `${taskDefinition.toString()}CwAgent`
+        const registry = ecr.Repository.fromRepositoryName(this.context, "CwAgentRepository", CLOUDWATCH_AGENT_IMAGE)
 
         this.containers[containerId] = new ecs.ContainerDefinition(this.context, containerId, {
-            image: ecs.ContainerImage.fromRegistry(CLOUDWATCH_AGENT_IMAGE),
+            image: ecs.ContainerImage.fromEcrRepository(registry, 'latest'),
             user: '0:1338',
             environment: {
                 CW_CONFIG_CONTENT: Fn.sub("{ \"metrics\": { \"namespace\":\"ECS/${Environment}/${AppName}\", \"metrics_collected\": { \"statsd\": {}}}}")

@@ -8,7 +8,8 @@ import * as ecr from "@aws-cdk/aws-ecr"
 
 import { haveResource } from '@aws-cdk/assert/lib/assertions/have-resource';
 import { ecrRepository } from './templates';
-
+const XRAY_DAEMON_IMAGE = 'infrastructure/xray';
+const CLOUDWATCH_AGENT_IMAGE = 'infrastructure/cwagent';
 
 const organisation = process.env["ORGANISATION"] || "CroudTech"
 const department = process.env["DEPARTMENT"] || "CroudControl"
@@ -71,7 +72,7 @@ describe('ECS App Helper', () => {
                 Cpu: cpu,
                 Family: `${organisation}-${department}-${environment}-TestAppDjango`,
                 Memory: memoryMiB,
-                ContainerDefinitions: [
+                ContainerDefinitions: [                    
                     {
                         Image: {
                             "Fn::Join": [
@@ -100,7 +101,70 @@ describe('ECS App Helper', () => {
                             "--bind",
                             ":80"
                         ],
-                    }
+                    },
+                    {   
+                        Name: "envoy",          
+                        Image: {
+                            "Fn::Join": [
+                                "",
+                                [
+                                  "undefined.dkr.ecr.",
+                                  {
+                                    "Ref": "AWS::Region"
+                                  },
+                                  ".",
+                                  {
+                                    "Ref": "AWS::URLSuffix"
+                                  },
+                                  "/aws-appmesh-envoy:v1.15.1.0-prod"
+                                ]
+                              ]
+                        },               
+                    },
+                    {   
+                        Name: "xray",        
+                        Image: {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    {
+                                        "Ref": "AWS::AccountId"
+                                    },
+                                    ".dkr.ecr.",
+                                    {
+                                        "Ref": "AWS::Region"
+                                    },
+                                    ".",
+                                    {
+                                        "Ref": "AWS::URLSuffix"
+                                    },
+                                    `/${XRAY_DAEMON_IMAGE}:latest`
+                                ]
+                            ]
+                        },                
+                    },
+                    {   
+                        Name: "cwagent",      
+                        Image: {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    {
+                                        "Ref": "AWS::AccountId"
+                                    },
+                                    ".dkr.ecr.",
+                                    {
+                                        "Ref": "AWS::Region"
+                                    },
+                                    ".",
+                                    {
+                                        "Ref": "AWS::URLSuffix"
+                                    },
+                                    `/${CLOUDWATCH_AGENT_IMAGE}:latest`
+                                ]
+                            ]
+                        },                    
+                    },
                 ],
                 NetworkMode: expectNetworkMode,
                 RequiresCompatibilities: [

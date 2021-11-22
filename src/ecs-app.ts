@@ -122,7 +122,8 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
     defaultProps: Partial<cdkTypes.EcsApplicationProps> = {
         enableIngress: true,
         appContainerName: "app",
-        extraPorts: []
+        extraPorts: [],
+        dockerLabels: {},
     }
 
     constructor(context: cdk.Stack, props: cdkTypes.EcsApplicationProps) {
@@ -323,17 +324,20 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
 
     protected _addAppContainer(taskDefinition: ecs.TaskDefinition, logGroup: awslogs.ILogGroup) {
         const image = this.getEcrImage("ApplicationImage", this._props.applicationEcrRepository, this._props.applicationEcrRepositoryTag)
-        const dockerLabels: cdkTypes.DockerLabels = {}
+        const IngressDockerLabels: cdkTypes.DockerLabels = {}
         if (this._props.enableIngress) {
-            dockerLabels["traefik.http.routers." + this._props.name + ".entrypoints"] = "websecure"
-            dockerLabels["traefik.http.routers." + this._props.name + ".tls"] = "true"
+            IngressDockerLabels["traefik.http.routers." + this._props.name + ".entrypoints"] = "websecure"
+            IngressDockerLabels["traefik.http.routers." + this._props.name + ".tls"] = "true"
             if ("hostname" in this._props) {
                 const hostnameTld = this.getCfSSMValue("AlbHostname", "EcsIngress")
-                dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `Host("${this._props.hostname}.${hostnameTld}") && PathPrefix("${this._props.proxyPath}")`
+                IngressDockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `Host("${this._props.hostname}.${hostnameTld}") && PathPrefix("${this._props.proxyPath}")`
             } else {
-                dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `PathPrefix("${this._props.proxyPath}");`
+                IngressDockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `PathPrefix("${this._props.proxyPath}");`
             }
         }
+
+        const dockerLabels = {...IngressDockerLabels, ...this._props.dockerLabels}
+        
 
         var portMappings:ecs.PortMapping[] = []
         this.appPorts().forEach(port => {

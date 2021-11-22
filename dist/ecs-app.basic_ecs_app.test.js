@@ -46,6 +46,9 @@ class CdkStackDeploymentNotifications extends cdk.Stack {
                 "--bind",
                 ":" + appPort.toString()
             ],
+            dockerLabels: {
+                "test_label": "test123"
+            }
         });
     }
 }
@@ -81,6 +84,9 @@ describe('ECS App Helper', () => {
                                     `/${ecrRepoName}:latest`
                                 ]
                             ]
+                        },
+                        DockerLabels: {
+                            "test_label": "test123"
                         },
                         Command: [
                             "gunicorn",

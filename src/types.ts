@@ -148,6 +148,7 @@ export interface EcsApplicationProps extends BaseCdkExtensionProps {
     readonly enableCloudmap: boolean
     readonly enableIngress?: boolean
     readonly appContainerName?: string
+    readonly dockerLabels?: DockerLabels
 }
 
 export interface defaultParameters {

@@ -99,7 +99,8 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         this.defaultProps = {
             enableIngress: true,
             appContainerName: "app",
-            extraPorts: []
+            extraPorts: [],
+            dockerLabels: {},
         };
         this._props = Object.assign(Object.assign({}, this.defaultProps), props);
         this._defaultEcsAppParameters();
@@ -269,18 +270,19 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
     _addAppContainer(taskDefinition, logGroup) {
         var _a;
         const image = this.getEcrImage("ApplicationImage", this._props.applicationEcrRepository, this._props.applicationEcrRepositoryTag);
-        const dockerLabels = {};
+        const IngressDockerLabels = {};
         if (this._props.enableIngress) {
-            dockerLabels["traefik.http.routers." + this._props.name + ".entrypoints"] = "websecure";
-            dockerLabels["traefik.http.routers." + this._props.name + ".tls"] = "true";
+            IngressDockerLabels["traefik.http.routers." + this._props.name + ".entrypoints"] = "websecure";
+            IngressDockerLabels["traefik.http.routers." + this._props.name + ".tls"] = "true";
             if ("hostname" in this._props) {
                 const hostnameTld = this.getCfSSMValue("AlbHostname", "EcsIngress");
-                dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `Host("${this._props.hostname}.${hostnameTld}") && PathPrefix("${this._props.proxyPath}")`;
+                IngressDockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `Host("${this._props.hostname}.${hostnameTld}") && PathPrefix("${this._props.proxyPath}")`;
             }
             else {
-                dockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `PathPrefix("${this._props.proxyPath}");`;
+                IngressDockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `PathPrefix("${this._props.proxyPath}");`;
             }
         }
+        const dockerLabels = Object.assign(Object.assign({}, IngressDockerLabels), this._props.dockerLabels);
         var portMappings = [];
         this.appPorts().forEach(port => {
             portMappings.push({

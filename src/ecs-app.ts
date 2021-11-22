@@ -17,7 +17,7 @@ const APP_MESH_ENVOY_SIDECAR_VERSION = 'v1.15.1.0-prod';
 
 export class CdkHelpers extends cdkBase.BaseCdkResourceExtension {
     addTags() {
-        
+
         this.defaultTags.forEach(tag => {
             if (tag in this.defaultParameters) {
                 var tagValue = Fn.ref(tag)
@@ -54,7 +54,7 @@ export class EcsApplicationInit extends cdkBase.BaseCdkResourceExtension {
     }
 
     addTags() {
-        
+
         this.defaultTags.forEach(tag => {
             if (tag in this.defaultParameters) {
                 var tagValue = Fn.ref(tag)
@@ -128,7 +128,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
 
     constructor(context: cdk.Stack, props: cdkTypes.EcsApplicationProps) {
         super(context, props)
-        this._props = {...this.defaultProps, ...props}
+        this._props = { ...this.defaultProps, ...props }
         this._defaultEcsAppParameters()
         this._outputs()
         this.defaultTags = [
@@ -276,20 +276,27 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             clusterArn: clusterArn,
             securityGroup: ecsSecurityGroup
         })
+        if (this._props.enableCloudmap) {
+            this._addAppContainer(taskDefinition, logGroup)
+            this._addEnvoyProxy(taskDefinition, logGroup)
+            this._addXrayDaemon(taskDefinition, logGroup)
+            this._addCwAgent(taskDefinition, logGroup)
 
-        this._addAppContainer(taskDefinition, logGroup)
-        this._addEnvoyProxy(taskDefinition, logGroup)
-        this._addXrayDaemon(taskDefinition, logGroup)
-        this._addCwAgent(taskDefinition, logGroup)
+            const cloudmapNamespace = this.resourceImports.importCloudmapNamespace("DefaultCloudmapNamespace")
+            this._createService({
+                cluster: cluster,
+                ecsSecurityGroup: ecsSecurityGroup,
+                cloudmapNamespace: cloudmapNamespace,
+                taskDefinition: taskDefinition
+            })
+        } else {
+            this._createService({
+                cluster: cluster,
+                ecsSecurityGroup: ecsSecurityGroup,
+                taskDefinition: taskDefinition
+            })
+        }
 
-        const cloudmapNamespace = this.resourceImports.importCloudmapNamespace("DefaultCloudmapNamespace")
-
-        this._createService({
-            cluster: cluster,
-            ecsSecurityGroup: ecsSecurityGroup,
-            cloudmapNamespace: cloudmapNamespace,
-            taskDefinition: taskDefinition
-        })
     }
 
     public getEcrImage(name: string, repository?: string, tag?: string): ecs.EcrImage {
@@ -336,10 +343,10 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             }
         }
 
-        const dockerLabels = {...IngressDockerLabels, ...this._props.dockerLabels}
-        
+        const dockerLabels = { ...IngressDockerLabels, ...this._props.dockerLabels }
 
-        var portMappings:ecs.PortMapping[] = []
+
+        var portMappings: ecs.PortMapping[] = []
         this.appPorts().forEach(port => {
             portMappings.push(
                 {
@@ -383,7 +390,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
     protected _addXrayDaemon(taskDefinition: ecs.TaskDefinition, logGroup: awslogs.LogGroup): ecs.ContainerDefinition {
         const containerId = `${taskDefinition.toString()}Xray`
         const registry = ecr.Repository.fromRepositoryName(this.context, "XrayRepository", XRAY_DAEMON_IMAGE)
-        
+
         this.containers[containerId] = new ecs.ContainerDefinition(this.context, containerId, {
             image: ecs.ContainerImage.fromEcrRepository(registry, 'latest'),
             user: "1337",
@@ -628,7 +635,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         return taskDefinition
     }
 
-    addTags() {        
+    addTags() {
         cdk.Tags.of(this.context).add("Organisation", this._props.organisation, {
             priority: 100
         });
@@ -675,7 +682,7 @@ export class EcsApplicationDjango extends EcsApplication {
         new ssm.StringParameter(this.context, 'DjangoDbMigrationParameter', {
             description: 'Migration task parameter',
             parameterName: templates.cfParameterName(this.parameter_name_prefix, this._props.name, "MigrationTaskArn"),
-            stringValue:  migrationTaskDefinition.taskDefinitionArn,
+            stringValue: migrationTaskDefinition.taskDefinitionArn,
             tier: ssm.ParameterTier.INTELLIGENT_TIERING,
         });
     }

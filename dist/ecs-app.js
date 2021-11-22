@@ -238,17 +238,26 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             clusterArn: clusterArn,
             securityGroup: ecsSecurityGroup
         });
-        this._addAppContainer(taskDefinition, logGroup);
-        this._addEnvoyProxy(taskDefinition, logGroup);
-        this._addXrayDaemon(taskDefinition, logGroup);
-        this._addCwAgent(taskDefinition, logGroup);
-        const cloudmapNamespace = this.resourceImports.importCloudmapNamespace("DefaultCloudmapNamespace");
-        this._createService({
-            cluster: cluster,
-            ecsSecurityGroup: ecsSecurityGroup,
-            cloudmapNamespace: cloudmapNamespace,
-            taskDefinition: taskDefinition
-        });
+        if (this._props.enableCloudmap) {
+            this._addAppContainer(taskDefinition, logGroup);
+            this._addEnvoyProxy(taskDefinition, logGroup);
+            this._addXrayDaemon(taskDefinition, logGroup);
+            this._addCwAgent(taskDefinition, logGroup);
+            const cloudmapNamespace = this.resourceImports.importCloudmapNamespace("DefaultCloudmapNamespace");
+            this._createService({
+                cluster: cluster,
+                ecsSecurityGroup: ecsSecurityGroup,
+                cloudmapNamespace: cloudmapNamespace,
+                taskDefinition: taskDefinition
+            });
+        }
+        else {
+            this._createService({
+                cluster: cluster,
+                ecsSecurityGroup: ecsSecurityGroup,
+                taskDefinition: taskDefinition
+            });
+        }
     }
     getEcrImage(name, repository, tag) {
         const appEcrImage = new ecs.EcrImage(ecr.Repository.fromRepositoryName(this.context, `EcrRepository${name}`, repository || this._props.applicationEcrRepository), tag || this._props.applicationEcrRepositoryTag || "latest");

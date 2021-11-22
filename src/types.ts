@@ -178,7 +178,7 @@ export interface defaultEcsInitParameters {
 export interface CreateServiceProps {
     cluster: ecs.ICluster
     taskDefinition: ecs.TaskDefinition
-    cloudmapNamespace: servicediscovery.INamespace
+    cloudmapNamespace?: servicediscovery.INamespace
     ecsSecurityGroup: ec2.ISecurityGroup | ec2.SecurityGroup
 }
 

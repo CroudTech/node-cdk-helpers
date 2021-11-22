@@ -5,8 +5,6 @@ require("@aws-cdk/assert/jest");
 const cdk = require("@aws-cdk/core");
 const helpers = require(".");
 const ecs = require("@aws-cdk/aws-ecs");
-const XRAY_DAEMON_IMAGE = 'infrastructure/xray';
-const CLOUDWATCH_AGENT_IMAGE = 'infrastructure/cwagent';
 const organisation = process.env["ORGANISATION"] || "CroudTech";
 const department = process.env["DEPARTMENT"] || "CroudControl";
 const environment = process.env["ENVIRONMENT"] || "Local";
@@ -47,6 +45,20 @@ class CdkStackDeploymentNotifications extends cdk.Stack {
                 ":" + appPort.toString()
             ],
         });
+        ecrApp.addUtilityTaskDefinition('migrate', {
+            containers: {
+                migrate: {
+                    command: "python manage.py migrate".split(" "),
+                    dependencies: {
+                        "create_db": "COMPLETE"
+                    }
+                },
+                create_db: {
+                    command: "python3 /app/create_postgres.py".split(" "),
+                    dockerImage: "croudtech/db-creator",
+                }
+            }
+        });
     }
 }
 exports.CdkStackDeploymentNotifications = CdkStackDeploymentNotifications;
@@ -59,7 +71,7 @@ describe('ECS App Helper', () => {
             const expectNetworkMode = ecs.NetworkMode.AWS_VPC;
             expect(stack).toHaveResourceLike('AWS::ECS::TaskDefinition', {
                 Cpu: cpu,
-                Family: `${organisation}-${department}-${environment}-TestAppDjango`,
+                Family: `${organisation}-${department}-${environment}-TestAppmigrate`,
                 Memory: memoryMiB,
                 ContainerDefinitions: [
                     {
@@ -83,35 +95,19 @@ describe('ECS App Helper', () => {
                             ]
                         },
                         Command: [
-                            "gunicorn",
-                            "app.wsgi:application",
-                            "--workers",
-                            "4",
-                            "--bind",
-                            ":80"
+                            "python",
+                            "manage.py",
+                            "migrate",
+                        ],
+                        Name: "migrate",
+                        DependsOn: [
+                            {
+                                "Condition": "COMPLETE",
+                                "ContainerName": "create_db"
+                            }
                         ],
                     },
                     {
-                        Name: "envoy",
-                        Image: {
-                            "Fn::Join": [
-                                "",
-                                [
-                                    "undefined.dkr.ecr.",
-                                    {
-                                        "Ref": "AWS::Region"
-                                    },
-                                    ".",
-                                    {
-                                        "Ref": "AWS::URLSuffix"
-                                    },
-                                    "/aws-appmesh-envoy:v1.15.1.0-prod"
-                                ]
-                            ]
-                        },
-                    },
-                    {
-                        Name: "xray",
                         Image: {
                             "Fn::Join": [
                                 "",
@@ -127,32 +123,15 @@ describe('ECS App Helper', () => {
                                     {
                                         "Ref": "AWS::URLSuffix"
                                     },
-                                    `/${XRAY_DAEMON_IMAGE}:latest`
+                                    "/croudtech/db-creator:latest"
                                 ]
                             ]
                         },
-                    },
-                    {
-                        Name: "cwagent",
-                        Image: {
-                            "Fn::Join": [
-                                "",
-                                [
-                                    {
-                                        "Ref": "AWS::AccountId"
-                                    },
-                                    ".dkr.ecr.",
-                                    {
-                                        "Ref": "AWS::Region"
-                                    },
-                                    ".",
-                                    {
-                                        "Ref": "AWS::URLSuffix"
-                                    },
-                                    `/${CLOUDWATCH_AGENT_IMAGE}:latest`
-                                ]
-                            ]
-                        },
+                        Command: [
+                            "python3",
+                            "/app/create_postgres.py",
+                        ],
+                        Name: "create_db",
                     },
                 ],
                 NetworkMode: expectNetworkMode,
@@ -161,7 +140,7 @@ describe('ECS App Helper', () => {
                 ],
                 TaskRoleArn: {
                     'Fn::GetAtt': [
-                        'TaskRoleApplicationTaskRole071E9963',
+                        'TaskRolemigrate7A249F02',
                         'Arn',
                     ],
                 },

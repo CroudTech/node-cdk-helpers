@@ -238,8 +238,8 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             clusterArn: clusterArn,
             securityGroup: ecsSecurityGroup
         });
+        this._addAppContainer(taskDefinition, logGroup);
         if (this._props.enableCloudmap) {
-            this._addAppContainer(taskDefinition, logGroup);
             this._addEnvoyProxy(taskDefinition, logGroup);
             this._addXrayDaemon(taskDefinition, logGroup);
             this._addCwAgent(taskDefinition, logGroup);

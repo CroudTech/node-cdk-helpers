@@ -239,7 +239,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
     }
 
     protected _createService(props: cdkTypes.CreateServiceProps) : ecs.FargateService {
-        if (this._props.enableCloudmap) {
+        if (this._props.enableCloudmap) {            
             var service = new ecs.FargateService(this.context, "Service", {
                 cluster: props.cluster,
                 taskDefinition: props.taskDefinition,
@@ -347,8 +347,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             IngressDockerLabels["traefik.http.routers." + this._props.name + ".entrypoints"] = "websecure"
             IngressDockerLabels["traefik.http.routers." + this._props.name + ".tls"] = "true"
             if ("hostname" in this._props) {
-                const hostnameTld = this.getCfSSMValue("AlbHostname", "EcsIngress")
-                IngressDockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `Host("${this._props.hostname}.${hostnameTld}") && PathPrefix("${this._props.proxyPath}")`
+                IngressDockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `Host("${this._props.hostname}") && PathPrefix("${this._props.proxyPath}")`
             } else {
                 IngressDockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `PathPrefix("${this._props.proxyPath}");`
             }

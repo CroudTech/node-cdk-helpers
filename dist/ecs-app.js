@@ -295,8 +295,7 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             IngressDockerLabels["traefik.http.routers." + this._props.name + ".entrypoints"] = "websecure";
             IngressDockerLabels["traefik.http.routers." + this._props.name + ".tls"] = "true";
             if ("hostname" in this._props) {
-                const hostnameTld = this.getCfSSMValue("AlbHostname", "EcsIngress");
-                IngressDockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `Host("${this._props.hostname}.${hostnameTld}") && PathPrefix("${this._props.proxyPath}")`;
+                IngressDockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `Host("${this._props.hostname}") && PathPrefix("${this._props.proxyPath}")`;
             }
             else {
                 IngressDockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `PathPrefix("${this._props.proxyPath}");`;

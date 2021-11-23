@@ -233,6 +233,7 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             .scaleOnCpuUtilization("ScalingPolicy", {
             targetUtilizationPercent: 80
         });
+        return service;
     }
     _createResources() {
         const logGroup = this._createLogGroup();
@@ -254,7 +255,7 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             this._addXrayDaemon(taskDefinition, logGroup);
             this._addCwAgent(taskDefinition, logGroup);
             const cloudmapNamespace = this.resourceImports.importCloudmapNamespace("DefaultCloudmapNamespace");
-            this._createService({
+            this.service = this._createService({
                 cluster: cluster,
                 ecsSecurityGroup: ecsSecurityGroup,
                 cloudmapNamespace: cloudmapNamespace,
@@ -262,7 +263,7 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             });
         }
         else {
-            this._createService({
+            this.service = this._createService({
                 cluster: cluster,
                 ecsSecurityGroup: ecsSecurityGroup,
                 taskDefinition: taskDefinition

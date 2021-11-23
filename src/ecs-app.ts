@@ -118,6 +118,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
     mesh: appmesh.IMesh
     taskDefinition: ecs.FargateTaskDefinition
     appEcrImage: ecs.EcrImage
+    service: ecs.FargateService
 
     defaultProps: Partial<cdkTypes.EcsApplicationProps> = {
         enableIngress: true,
@@ -237,7 +238,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         return this.taskDefinition
     }
 
-    protected _createService(props: cdkTypes.CreateServiceProps) {
+    protected _createService(props: cdkTypes.CreateServiceProps) : ecs.FargateService {
         if (this._props.enableCloudmap) {
             var service = new ecs.FargateService(this.context, "Service", {
                 cluster: props.cluster,
@@ -268,6 +269,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             .scaleOnCpuUtilization("ScalingPolicy", {
                 targetUtilizationPercent: 80
             });
+        return service
     }
 
     protected _createResources() {
@@ -292,14 +294,14 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             this._addCwAgent(taskDefinition, logGroup)
 
             const cloudmapNamespace = this.resourceImports.importCloudmapNamespace("DefaultCloudmapNamespace")
-            this._createService({
+            this.service = this._createService({
                 cluster: cluster,
                 ecsSecurityGroup: ecsSecurityGroup,
                 cloudmapNamespace: cloudmapNamespace,
                 taskDefinition: taskDefinition
             })
         } else {
-            this._createService({
+            this.service = this._createService({
                 cluster: cluster,
                 ecsSecurityGroup: ecsSecurityGroup,
                 taskDefinition: taskDefinition

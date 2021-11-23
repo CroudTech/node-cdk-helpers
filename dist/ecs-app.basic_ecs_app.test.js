@@ -38,6 +38,7 @@ class CdkStackDeploymentNotifications extends cdk.Stack {
             proxyPath: "/api/notifications",
             hostname: networkSubdomain,
             ecsClusterSsmKey: "FargateClusterPrivateArn",
+            enableCustomMetrics: true,
             command: [
                 "gunicorn",
                 "app.wsgi:application",

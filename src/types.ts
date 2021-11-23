@@ -149,6 +149,7 @@ export interface EcsApplicationProps extends BaseCdkExtensionProps {
     readonly enableIngress?: boolean
     readonly appContainerName?: string
     readonly dockerLabels?: DockerLabels
+    readonly enableCustomMetrics?: boolean
 }
 
 export interface defaultParameters {

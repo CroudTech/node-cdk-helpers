@@ -125,6 +125,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         appContainerName: "app",
         extraPorts: [],
         dockerLabels: {},
+        enableCustomMetrics: false,
     }
 
     constructor(context: cdk.Stack, props: cdkTypes.EcsApplicationProps) {
@@ -291,7 +292,9 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         if (this._props.enableCloudmap) {            
             this._addEnvoyProxy(taskDefinition, logGroup)
             this._addXrayDaemon(taskDefinition, logGroup)
-            this._addCwAgent(taskDefinition, logGroup)
+            if (this._props.enableCustomMetrics) {
+                this._addCwAgent(taskDefinition, logGroup)
+            }  
 
             const cloudmapNamespace = this.resourceImports.importCloudmapNamespace("DefaultCloudmapNamespace")
             this.service = this._createService({
@@ -452,20 +455,23 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             repositoryName: 'aws-appmesh-envoy',
             repositoryArn: `arn:${partition}:ecr:${region}:${envoyImageOwnerAccount}:repository/aws-appmesh-envoy`,
         });
+        const environment = {
+            APPMESH_RESOURCE_ARN: virtualNode.virtualNodeArn,
+            ENVOY_LOG_LEVEL: "debug",
+            ENABLE_ENVOY_XRAY_TRACING: "1",
+            XRAY_DAEMON_PORT: "2000",            
+        }
+        if (this._props.enableCustomMetrics) {
+            environment["ENABLE_ENVOY_STATS_TAGS"] ='1'
+            environment["ENABLE_ENVOY_DOG_STATSD"] ='1'
+        }
         this.containers[containerId] = taskDefinition.addContainer("envoyContainer", {
             containerName: "envoy",
             image: ecs.ContainerImage.fromEcrRepository(appMeshRepo, APP_MESH_ENVOY_SIDECAR_VERSION),
             stopTimeout: cdk.Duration.seconds(10),
             essential: true,
             user: "1337",
-            environment: {
-                APPMESH_RESOURCE_ARN: virtualNode.virtualNodeArn,
-                ENVOY_LOG_LEVEL: "debug",
-                ENABLE_ENVOY_XRAY_TRACING: "1",
-                XRAY_DAEMON_PORT: "2000",
-                ENABLE_ENVOY_STATS_TAGS: '1',
-                ENABLE_ENVOY_DOG_STATSD: '1',
-            },
+            environment: environment,
             healthCheck: {
                 command: [
                     "CMD-SHELL",
@@ -636,11 +642,10 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         if (props.enableTracing) {
             this._addEnvoyProxy(taskDefinition, logGroup)
             this._addXrayDaemon(taskDefinition, logGroup)
-            this._addCwAgent(taskDefinition, logGroup)
+            if (this._props.enableCustomMetrics) {
+                this._addCwAgent(taskDefinition, logGroup)
+            }            
         }
-
-
-
 
         return taskDefinition
     }

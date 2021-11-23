@@ -188,26 +188,35 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
 
     protected _createTaskDefinition(): ecs.TaskDefinition {
         if (this.taskDefinition == null) {
-            this.taskDefinition = new ecs.FargateTaskDefinition(this.context, 'TaskDefinition', {
-                cpu: parseInt(this._props.cpu),
-                family: this.resourceName(this._props.name, this._props.nameSuffix),
-                memoryLimitMiB: parseInt(this._props.memoryMiB),
-                taskRole: this._taskRole(),
-
-                proxyConfiguration: new ecs.AppMeshProxyConfiguration({
-                    containerName: 'envoy',
-                    properties: {
-                        appPorts: this.appPorts(),
-                        proxyEgressPort: 15001,
-                        proxyIngressPort: 15000,
-                        ignoredUID: 1337,
-                        egressIgnoredIPs: [
-                            '169.254.170.2',
-                            '169.254.169.254'
-                        ]
-                    }
-                })
-            });
+            if (this._props.enableCloudmap) {
+                this.taskDefinition = new ecs.FargateTaskDefinition(this.context, 'TaskDefinition', {
+                    cpu: parseInt(this._props.cpu),
+                    family: this.resourceName(this._props.name, this._props.nameSuffix),
+                    memoryLimitMiB: parseInt(this._props.memoryMiB),
+                    taskRole: this._taskRole(),
+    
+                    proxyConfiguration: new ecs.AppMeshProxyConfiguration({
+                        containerName: 'envoy',
+                        properties: {
+                            appPorts: this.appPorts(),
+                            proxyEgressPort: 15001,
+                            proxyIngressPort: 15000,
+                            ignoredUID: 1337,
+                            egressIgnoredIPs: [
+                                '169.254.170.2',
+                                '169.254.169.254'
+                            ]
+                        }
+                    })
+                });
+            } else {
+                this.taskDefinition = new ecs.FargateTaskDefinition(this.context, 'TaskDefinition', {
+                    cpu: parseInt(this._props.cpu),
+                    family: this.resourceName(this._props.name, this._props.nameSuffix),
+                    memoryLimitMiB: parseInt(this._props.memoryMiB),
+                    taskRole: this._taskRole(),
+                });
+            }
             this.taskDefinition.executionRole?.attachInlinePolicy(new iam.Policy(this.context, "ApplicationTaskExecutionRolePolicy", {
                 statements: [
                     // policies to allow access to other AWS services from within the container e.g SES (Simple Email Service)

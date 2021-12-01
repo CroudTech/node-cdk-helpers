@@ -119,8 +119,8 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
     _createLogGroup() {
         if (this.logGroup == null) {
             this.logGroup = new awslogs.LogGroup(this.context, `AppLogGroup`, {
-                logGroupName: core_1.Fn.sub("${Organisation}-${Department}-${Environment}-EcsServiceLogs-${AppName}${AppNameSuffix}"),
-                retention: awslogs.RetentionDays.ONE_MONTH,
+                logGroupName: core_1.Fn.sub("${Organisation}-${Department}-${Environment}-EcsServiceLogs-${AppName}-${AppNameSuffix}"),
+                retention: awslogs.RetentionDays.ONE_WEEK,
                 removalPolicy: cdk.RemovalPolicy.DESTROY,
             });
         }
@@ -129,7 +129,7 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
     _createNewLogGroup(name) {
         const logGroup = new awslogs.LogGroup(this.context, `${name}LogGroup`, {
             logGroupName: this.resourceName(this._props.name, name),
-            retention: awslogs.RetentionDays.ONE_MONTH,
+            retention: awslogs.RetentionDays.ONE_WEEK,
             removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
         return logGroup;

@@ -134,6 +134,21 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         });
         return logGroup;
     }
+    _getServiceDiscoveryName(include_tld = true) {
+        const service_discovery_name = this.getCfSSMValue("ECSServiceDiscoveryDomainName", "Apps");
+        if (this._props.nameSuffix) {
+            var name = `${this._props.name}.${this._props.nameSuffix}`;
+        }
+        else {
+            var name = `${this._props.name}`;
+        }
+        if (include_tld) {
+            return core_1.Fn.join('.', [name, service_discovery_name]);
+        }
+        else {
+            return name.toLowerCase();
+        }
+    }
     _createVirtualNode() {
         if (this.virtualNode == null) {
             this.virtualNode = new appmesh.VirtualNode(this.context, this._resourceName('VirtualNode'), {
@@ -144,7 +159,7 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
                         port: this._props.appPort
                     })
                 ],
-                serviceDiscovery: appmesh.ServiceDiscovery.dns(this.defaultEcsAppParameters["ServiceDiscoveryName"].valueAsString + "." + this.getCfSSMValue("ECSServiceDiscoveryDomainName", "Apps")),
+                serviceDiscovery: appmesh.ServiceDiscovery.dns(this._getServiceDiscoveryName()),
                 accessLog: appmesh.AccessLog.fromFilePath("/dev/stdout")
             });
         }
@@ -213,7 +228,7 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
                     cloudMapNamespace: props.cloudmapNamespace,
                     container: this.containers["app"],
                     dnsTtl: cdk.Duration.seconds(20),
-                    name: this.defaultEcsAppParameters["ServiceDiscoveryName"].valueAsString
+                    name: this._getServiceDiscoveryName(false)
                 },
                 securityGroup: props.ecsSecurityGroup
             });

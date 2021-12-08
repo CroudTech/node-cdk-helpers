@@ -223,7 +223,7 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             var service = new ecs.FargateService(this.context, "Service", {
                 cluster: props.cluster,
                 taskDefinition: props.taskDefinition,
-                serviceName: core_1.Fn.sub("${Organisation}-${Department}-${Environment}-${AppName}${AppNameSuffix}"),
+                // serviceName: Fn.sub("${Organisation}-${Department}-${Environment}-${AppName}${AppNameSuffix}"),
                 cloudMapOptions: {
                     cloudMapNamespace: props.cloudmapNamespace,
                     container: this.containers["app"],
@@ -237,7 +237,7 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             var service = new ecs.FargateService(this.context, "Service", {
                 cluster: props.cluster,
                 taskDefinition: props.taskDefinition,
-                serviceName: core_1.Fn.sub("${Organisation}-${Department}-${Environment}-${AppName}${AppNameSuffix}"),
+                // serviceName: Fn.sub("${Organisation}-${Department}-${Environment}-${AppName}${AppNameSuffix}"),
                 securityGroup: props.ecsSecurityGroup
             });
         }

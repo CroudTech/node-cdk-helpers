@@ -1,8 +1,8 @@
 {
     "compilerOptions": {
         "emitDecoratorMetadata": true,
-        "declaration": true,
-        "strict": false,
+        "declaration": false,
+        "strict": true,
         "noImplicitAny": true,
         "strictNullChecks": true,
         "noImplicitThis": true,
@@ -17,7 +17,7 @@
         "module": "commonjs",
         "target": "ES2017",
         "outDir": "dist",
-        "rootDir": "src",
+        "rootDir": "src"
     },
     "include": [
         "**/*"

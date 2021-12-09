@@ -1,16 +1,35 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EcsApplicationDjango = exports.EcsApplication = exports.EcsApplicationInit = exports.CdkHelpers = void 0;
 const core_1 = require("@aws-cdk/core");
-const appmesh = require("@aws-cdk/aws-appmesh");
-const awslogs = require("@aws-cdk/aws-logs");
-const cdk = require("@aws-cdk/core");
-const cdkBase = require("./base-extensions");
-const ecr = require("@aws-cdk/aws-ecr");
-const ecs = require("@aws-cdk/aws-ecs");
-const iam = require("@aws-cdk/aws-iam");
-const templates = require("./templates");
-const ssm = require("@aws-cdk/aws-ssm");
+const appmesh = __importStar(require("@aws-cdk/aws-appmesh"));
+const awslogs = __importStar(require("@aws-cdk/aws-logs"));
+const cdk = __importStar(require("@aws-cdk/core"));
+const cdkBase = __importStar(require("./base-extensions"));
+const ecr = __importStar(require("@aws-cdk/aws-ecr"));
+const ecs = __importStar(require("@aws-cdk/aws-ecs"));
+const iam = __importStar(require("@aws-cdk/aws-iam"));
+const templates = __importStar(require("./templates"));
+const ssm = __importStar(require("@aws-cdk/aws-ssm"));
 const XRAY_DAEMON_IMAGE = 'infrastructure/xray';
 const CLOUDWATCH_AGENT_IMAGE = 'infrastructure/cwagent';
 const APP_MESH_ENVOY_SIDECAR_VERSION = 'v1.15.1.0-prod';
@@ -49,10 +68,10 @@ class EcsApplicationInit extends cdkBase.BaseCdkResourceExtension {
         this.defaultTags.forEach(tag => {
             if (tag in this.defaultParameters) {
                 var tagValue = core_1.Fn.ref(tag);
+                cdk.Tags.of(this.context).add(tag, tagValue, {
+                    priority: 100
+                });
             }
-            cdk.Tags.of(this.context).add(tag, tagValue, {
-                priority: 100
-            });
         });
     }
     _createResources() {
@@ -166,7 +185,7 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         return this.virtualNode;
     }
     appPorts() {
-        return [this._props.appPort, ...this._props.extraPorts];
+        return [this._props.appPort, ...this._props.extraPorts || []];
     }
     _createTaskDefinition() {
         var _a, _b;
@@ -333,7 +352,7 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             stopTimeout: cdk.Duration.seconds(10),
             command: this._props.command,
             essential: true,
-            environment: this.getEnvironmentVars(this._props.environmentVars),
+            environment: this.getEnvironmentVars(this._props.environmentVars || {}),
             portMappings: portMappings,
             logging: ecs.LogDriver.awsLogs({
                 streamPrefix: this._props.appContainerName + "-" + this.defaultEcsAppParameters.AppName.valueAsString,
@@ -412,6 +431,8 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             ENVOY_LOG_LEVEL: "debug",
             ENABLE_ENVOY_XRAY_TRACING: "1",
             XRAY_DAEMON_PORT: "2000",
+            ENABLE_ENVOY_STATS_TAGS: "0",
+            ENABLE_ENVOY_DOG_STATSD: "0"
         };
         if (this._props.enableCustomMetrics) {
             environment["ENABLE_ENVOY_STATS_TAGS"] = '1';
@@ -546,7 +567,7 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             });
         }
         const logGroup = this._createNewLogGroup(name);
-        const baseEnvironmentVars = this.getEnvironmentVars(props.environmentVars || this._props.environmentVars);
+        const baseEnvironmentVars = this.getEnvironmentVars(props.environmentVars || this._props.environmentVars || {});
         const containers = {};
         for (const containerName in props.containers) {
             const containerProps = props.containers[containerName];

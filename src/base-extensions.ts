@@ -56,7 +56,7 @@ export abstract class BaseCdkResourceExtension extends BaseCdkExtension {
         this.resourceImports = new resourceImports.ResourceImport(this.context, props)
     }
     defaultParameters: cdkTypes.defaultParameters
-    abstract addTags()
+    abstract addTags():void
 
     protected abstract _createResources(): void
 }

@@ -58,10 +58,10 @@ export class EcsApplicationInit extends cdkBase.BaseCdkResourceExtension {
         this.defaultTags.forEach(tag => {
             if (tag in this.defaultParameters) {
                 var tagValue = Fn.ref(tag)
+                cdk.Tags.of(this.context).add(tag, tagValue, {
+                    priority: 100
+                });
             }
-            cdk.Tags.of(this.context).add(tag, tagValue, {
-                priority: 100
-            });
         });
     }
 
@@ -200,7 +200,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
     }
 
     protected appPorts(): number[] {
-        return [this._props.appPort, ...this._props.extraPorts]
+        return [this._props.appPort, ...this._props.extraPorts || []]
     }
 
     protected _createTaskDefinition(): ecs.TaskDefinition {
@@ -390,7 +390,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             stopTimeout: cdk.Duration.seconds(10),
             command: this._props.command,
             essential: true,
-            environment: this.getEnvironmentVars(this._props.environmentVars),
+            environment: this.getEnvironmentVars(this._props.environmentVars || {}),
             portMappings: portMappings,
             logging: ecs.LogDriver.awsLogs({
                 streamPrefix: this._props.appContainerName + "-" + this.defaultEcsAppParameters.AppName.valueAsString,
@@ -474,7 +474,9 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             APPMESH_RESOURCE_ARN: virtualNode.virtualNodeArn,
             ENVOY_LOG_LEVEL: "debug",
             ENABLE_ENVOY_XRAY_TRACING: "1",
-            XRAY_DAEMON_PORT: "2000",            
+            XRAY_DAEMON_PORT: "2000",  
+            ENABLE_ENVOY_STATS_TAGS: "0",
+            ENABLE_ENVOY_DOG_STATSD: "0"
         }
         if (this._props.enableCustomMetrics) {
             environment["ENABLE_ENVOY_STATS_TAGS"] ='1'
@@ -558,7 +560,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         return taskRole
     }
 
-    protected _resourceName(name): string {
+    protected _resourceName(name:string): string {
         return `${name}${this._props.name}${this._props.nameSuffix}`
     }
 
@@ -619,7 +621,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
 
 
         const logGroup = this._createNewLogGroup(name)
-        const baseEnvironmentVars = this.getEnvironmentVars(props.environmentVars || this._props.environmentVars)
+        const baseEnvironmentVars = this.getEnvironmentVars(props.environmentVars || this._props.environmentVars || {})
         const containers: cdkTypes.ContainerDefinitions = {}
         for (const containerName in props.containers) {
             const containerProps = props.containers[containerName]
@@ -646,7 +648,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
                     const dependencyCondition = containerProps.dependencies[dependencyContainer]
                     if (dependencyContainer in containers && containerName in containers) {
                         containers[containerName].addContainerDependencies({
-                            condition: ecs.ContainerDependencyCondition[dependencyCondition],
+                            condition: (<any>ecs.ContainerDependencyCondition)[dependencyCondition],
                             container: containers[dependencyContainer]
                         })
                     }

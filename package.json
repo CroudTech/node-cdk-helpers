@@ -49,7 +49,7 @@
     "@aws-cdk/aws-rds": "^1.x",
     "@aws-cdk/aws-servicediscovery": "^1.x",
     "@aws-cdk/core": "1.x",
-    "aws-cdk": "1.x"
+    "aws-cdk": "2.x"
   },
   "dependencies": {
     "@aws-sdk/client-ssm": "^3.40.0",

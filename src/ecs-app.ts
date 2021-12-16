@@ -696,7 +696,7 @@ export class EcsApplicationDjango extends EcsApplication {
     }
 
     protected _addMigrationTaskDefinition() {
-        const migrationTaskDefinition = this.addUtilityTaskDefinition('Migrate', {
+        const migrationTaskDefinition = this.addUtilityTaskDefinition(`Migrate${this._props.nameSuffix}`, {
             containers: {
                 migrate: {
                     command: "python manage.py migrate".split(" "),

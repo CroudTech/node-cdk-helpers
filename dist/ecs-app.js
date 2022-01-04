@@ -337,7 +337,7 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
                 IngressDockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `Host("${this._props.hostname}") && PathPrefix("${this._props.proxyPath}")`;
             }
             else {
-                IngressDockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `PathPrefix("${this._props.proxyPath}");`;
+                IngressDockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `PathPrefix("${this._props.proxyPath}")`;
             }
         }
         const dockerLabels = Object.assign(Object.assign({}, IngressDockerLabels), this._props.dockerLabels);

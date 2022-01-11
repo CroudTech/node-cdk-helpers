@@ -717,7 +717,7 @@ export class EcsApplicationDjango extends EcsApplication {
             "CreateDbContainer",
             {
                 containerName: "createdb",
-                image: this.getEcrImage("DbCreatorImage", "croudtech/db-creator", "lastest"),
+                image: this.getEcrImage("DbCreatorImage", "croudtech/db-creator", "latest"),
                 stopTimeout: cdk.Duration.seconds(10),
                 command: "python3 /app/create_postgres.py".split(" "),
                 essential: false,

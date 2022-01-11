@@ -696,28 +696,38 @@ export class EcsApplicationDjango extends EcsApplication {
     }
 
     protected _addMigrationTaskDefinition() {
-        const migrationTaskDefinition = this.addUtilityTaskDefinition('Migrate', {
-            containers: {
-                migrate: {
-                    command: "python manage.py migrate".split(" "),
-                    dependencies: {
-                        "create_db": "COMPLETE"
-                    }
-                },
-                create_db: {
-                    command: "python3 /app/create_postgres.py".split(" "),
-                    dockerImage: "croudtech/db-creator",
-                    dockerTag: "latest",
-                    essential: false,
-                }
-            }
-        })
 
-        new ssm.StringParameter(this.context, 'DjangoDbMigrationParameter', {
-            description: 'Migration task parameter',
-            parameterName: templates.cfParameterName(this.parameter_name_prefix, this._props.name, "MigrationTaskArn"),
-            stringValue: migrationTaskDefinition.taskDefinitionArn,
-            tier: ssm.ParameterTier.INTELLIGENT_TIERING,
-        });
+        const migrate_container = this.taskDefinition.addContainer(
+            "MigrateContainer",
+            {
+                containerName: "migrate",
+                image: this.getEcrImage("ApplicationMigrateImage", this._props.applicationEcrRepository, this._props.applicationEcrRepositoryTag),
+                stopTimeout: cdk.Duration.seconds(10),
+                command: "python manage.py migrate".split(" "),
+                essential: false,
+                environment: this.getEnvironmentVars(this._props.environmentVars || {}),
+                logging: ecs.LogDriver.awsLogs({
+                    streamPrefix: "migrate",
+                    logGroup: this.logGroup
+                }),
+                
+            }
+        )
+        const create_db_container = this.taskDefinition.addContainer(
+            "CreateDbContainer",
+            {
+                containerName: "createdb",
+                image: this.getEcrImage("DbCreatorImage", "croudtech/db-creator", "lastest"),
+                stopTimeout: cdk.Duration.seconds(10),
+                command: "python3 /app/create_postgres.py".split(" "),
+                essential: false,
+                environment: this.getEnvironmentVars(this._props.environmentVars || {}),
+                logging: ecs.LogDriver.awsLogs({
+                    streamPrefix: "create_db",
+                    logGroup: this.logGroup
+                }),
+                
+            }
+        )        
     }
 }

@@ -658,6 +658,14 @@ class EcsApplicationDjango extends EcsApplication {
                 logGroup: this.logGroup
             }),
         });
+        migrate_container.addContainerDependencies({
+            container: create_db_container,
+            condition: ecs.ContainerDependencyCondition.COMPLETE
+        });
+        this.containers["app"].addContainerDependencies({
+            container: migrate_container,
+            condition: ecs.ContainerDependencyCondition.COMPLETE
+        });
     }
 }
 exports.EcsApplicationDjango = EcsApplicationDjango;

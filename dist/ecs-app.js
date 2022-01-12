@@ -331,13 +331,18 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         const image = this.getEcrImage("ApplicationImage", this._props.applicationEcrRepository, this._props.applicationEcrRepositoryTag);
         const IngressDockerLabels = {};
         if (this._props.enableIngress) {
-            IngressDockerLabels["traefik.http.routers." + this._props.name + ".entrypoints"] = "websecure";
-            IngressDockerLabels["traefik.http.routers." + this._props.name + ".tls"] = "true";
+            IngressDockerLabels[`traefik.http.routers.${this._props.name}.entrypoints`] = "websecure";
+            IngressDockerLabels[`traefik.http.routers.${this._props.name}.tls`] = "true";
             if ("hostname" in this._props) {
-                IngressDockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `Host("${this._props.hostname}") && PathPrefix("${this._props.proxyPath}")`;
+                IngressDockerLabels[`traefik.http.routers.${this._props.name}.rule`] = `Host("${this._props.hostname}") && PathPrefix("${this._props.proxyPath}")`;
             }
             else {
-                IngressDockerLabels["traefik.http.routers." + this._props.name + ".rule"] = `PathPrefix("${this._props.proxyPath}")`;
+                IngressDockerLabels[`traefik.http.routers.${this._props.name}.rule`] = `PathPrefix("${this._props.proxyPath}")`;
+            }
+            if ("proxyStripPath" in this._props && this._props.proxyStripPath && this._props.proxyPath) {
+                IngressDockerLabels[`traefik.http.middlewares.${this._props.name}stripprefix.stripprefix.prefixes`] = this._props.proxyPath;
+                IngressDockerLabels[`traefik.http.middlewares.${this._props.name}stripprefix.stripprefix.forceSlash=false`] = "false";
+                IngressDockerLabels[`traefik.tcp.routers.${this._props.name}.middlewares`] = `${this._props.name}stripprefix`;
             }
         }
         const dockerLabels = Object.assign(Object.assign({}, IngressDockerLabels), this._props.dockerLabels);

@@ -341,7 +341,7 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             }
             if ("proxyStripPath" in this._props && this._props.proxyStripPath && this._props.proxyPath) {
                 IngressDockerLabels[`traefik.http.middlewares.${this._props.name}stripprefix.stripprefix.prefixes`] = this._props.proxyPath;
-                IngressDockerLabels[`traefik.http.middlewares.${this._props.name}stripprefix.stripprefix.forceSlash=false`] = "false";
+                IngressDockerLabels[`traefik.http.middlewares.${this._props.name}stripprefix.stripprefix.forceSlash`] = "false";
                 IngressDockerLabels[`traefik.tcp.routers.${this._props.name}.middlewares`] = `${this._props.name}stripprefix`;
             }
         }

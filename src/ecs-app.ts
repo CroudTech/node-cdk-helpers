@@ -492,7 +492,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         }
         this.containers[containerId] = taskDefinition.addContainer("envoyContainer", {
             containerName: "envoy",
-            image: ecs.ContainerImage.fromEcrRepository(appMeshRepo, APP_MESH_ENVOY_SIDECAR_VERSION),
+            image: ecs.ContainerImage.fromEcrRepository(appMeshRepo, this._props.envoyProxyVersion),
             stopTimeout: cdk.Duration.seconds(10),
             essential: true,
             user: "1337",

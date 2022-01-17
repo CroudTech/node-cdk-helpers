@@ -123,6 +123,7 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             enableCustomMetrics: false,
         };
         this._props = Object.assign(Object.assign({}, this.defaultProps), props);
+        this._props.envoyProxyVersion = props.envoyProxyVersion ? props.envoyProxyVersion : APP_MESH_ENVOY_SIDECAR_VERSION;
         this._defaultEcsAppParameters();
         this._outputs();
         this.defaultTags = [

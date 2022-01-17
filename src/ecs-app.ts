@@ -13,7 +13,7 @@ import * as ssm from '@aws-cdk/aws-ssm';
 
 const XRAY_DAEMON_IMAGE = 'infrastructure/xray';
 const CLOUDWATCH_AGENT_IMAGE = 'infrastructure/cwagent';
-const APP_MESH_ENVOY_SIDECAR_VERSION = 'v1.15.1.0-prod';
+const APP_MESH_ENVOY_SIDECAR_VERSION:string = 'v1.15.1.0-prod';
 
 export class CdkHelpers extends cdkBase.BaseCdkResourceExtension {
     addTags() {
@@ -131,6 +131,7 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
     constructor(context: cdk.Stack, props: cdkTypes.EcsApplicationProps) {
         super(context, props)
         this._props = { ...this.defaultProps, ...props }
+        this._props.envoyProxyVersion = props.envoyProxyVersion ? props.envoyProxyVersion : APP_MESH_ENVOY_SIDECAR_VERSION
         this._defaultEcsAppParameters()
         this._outputs()
         this.defaultTags = [

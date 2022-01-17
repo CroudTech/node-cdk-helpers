@@ -151,6 +151,7 @@ export interface EcsApplicationProps extends BaseCdkExtensionProps {
     readonly dockerLabels?: DockerLabels
     readonly enableCustomMetrics?: boolean
     readonly proxyStripPath?: boolean
+    envoyProxyVersion?: string
 }
 
 export interface defaultParameters {

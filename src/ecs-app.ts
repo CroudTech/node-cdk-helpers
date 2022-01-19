@@ -282,11 +282,11 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
 
         service
             .autoScaleTaskCount({
-                minCapacity: 1,
-                maxCapacity: 3
+                minCapacity: this._props.minCapacity || 1,
+                maxCapacity: this._props.maxCapacity || 1
             })
             .scaleOnCpuUtilization("ScalingPolicy", {
-                targetUtilizationPercent: 80
+                targetUtilizationPercent: this._props.targetUtilizationPercent || 80
             });
         return service
     }

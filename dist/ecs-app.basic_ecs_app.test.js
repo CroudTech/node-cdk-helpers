@@ -36,13 +36,11 @@ const cpu = "256";
 const memoryMiB = "512";
 const envoyProxy = true;
 const appVolumes = [];
-const appHealthCheckPath = "/status";
 class CdkStackDeploymentDjango extends cdk.Stack {
     constructor(scope, id, props) {
         super(scope, id, props);
         const ecrApp = new helpers.EcsApplication(this, {
             enableCloudmap: true,
-            appHealthCheckPath: appHealthCheckPath,
             applicationEcrRepository: ecrRepoName,
             appPort: appPort,
             appVolumes: appVolumes,
@@ -78,7 +76,6 @@ class CdkStackDeploymentDjangoWithoutSuffix extends cdk.Stack {
         super(scope, id, props);
         const ecrApp = new helpers.EcsApplication(this, {
             enableCloudmap: true,
-            appHealthCheckPath: appHealthCheckPath,
             applicationEcrRepository: ecrRepoName,
             appPort: appPort,
             appVolumes: appVolumes,

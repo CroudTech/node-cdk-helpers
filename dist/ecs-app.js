@@ -354,20 +354,39 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
                 protocol: ecs.Protocol.TCP
             });
         });
-        this.containers["app"] = taskDefinition.addContainer("appContainer", {
-            containerName: this._props.appContainerName,
-            image: image,
-            stopTimeout: cdk.Duration.seconds(10),
-            command: this._props.command,
-            essential: true,
-            environment: this.getEnvironmentVars(this._props.environmentVars || {}),
-            portMappings: portMappings,
-            logging: ecs.LogDriver.awsLogs({
-                streamPrefix: this._props.appContainerName + "-" + this.defaultEcsAppParameters.AppName.valueAsString,
-                logGroup: logGroup
-            }),
-            dockerLabels: dockerLabels,
-        });
+        if (this._props.appHealthcheck) {
+            this.containers["app"] = taskDefinition.addContainer("appContainer", {
+                containerName: this._props.appContainerName,
+                image: image,
+                stopTimeout: cdk.Duration.seconds(10),
+                command: this._props.command,
+                essential: true,
+                environment: this.getEnvironmentVars(this._props.environmentVars || {}),
+                portMappings: portMappings,
+                logging: ecs.LogDriver.awsLogs({
+                    streamPrefix: this._props.appContainerName + "-" + this.defaultEcsAppParameters.AppName.valueAsString,
+                    logGroup: logGroup
+                }),
+                dockerLabels: dockerLabels,
+                healthCheck: this._props.appHealthcheck
+            });
+        }
+        else {
+            this.containers["app"] = taskDefinition.addContainer("appContainer", {
+                containerName: this._props.appContainerName,
+                image: image,
+                stopTimeout: cdk.Duration.seconds(10),
+                command: this._props.command,
+                essential: true,
+                environment: this.getEnvironmentVars(this._props.environmentVars || {}),
+                portMappings: portMappings,
+                logging: ecs.LogDriver.awsLogs({
+                    streamPrefix: this._props.appContainerName + "-" + this.defaultEcsAppParameters.AppName.valueAsString,
+                    logGroup: logGroup
+                }),
+                dockerLabels: dockerLabels,
+            });
+        }
         (_a = this._props.appVolumes) === null || _a === void 0 ? void 0 : _a.forEach(volume => {
             taskDefinition.addVolume({
                 efsVolumeConfiguration: {

@@ -26,14 +26,12 @@ const envoyProxy = true
 
 const appVolumes: helpers.types.ApplicationVolume[] = []
 
-const appHealthCheckPath = "/status"
 export class CdkStackDeploymentDjango extends cdk.Stack {
     constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
 
         const ecrApp = new helpers.EcsApplication(this, {
             enableCloudmap: true,
-            appHealthCheckPath: appHealthCheckPath,
             applicationEcrRepository: ecrRepoName,
             appPort: appPort,
             appVolumes: appVolumes,
@@ -70,7 +68,6 @@ export class CdkStackDeploymentDjangoWithoutSuffix extends cdk.Stack {
 
         const ecrApp = new helpers.EcsApplication(this, {
             enableCloudmap: true,
-            appHealthCheckPath: appHealthCheckPath,
             applicationEcrRepository: ecrRepoName,
             appPort: appPort,
             appVolumes: appVolumes,

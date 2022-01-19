@@ -137,7 +137,7 @@ export interface EcsApplicationProps extends BaseCdkExtensionProps {
     readonly command?: string[] | undefined
     readonly appPort: number
     readonly extraPorts?: number[]
-    readonly appHealthCheckPath: string
+    readonly appHealthcheck?: ecs.HealthCheck
     readonly environmentVars?: EnvironmentType
     readonly proxyPath?: string
     readonly hostname?: string

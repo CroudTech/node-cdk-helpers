@@ -179,7 +179,7 @@ class EcsApplication extends cdkBase.BaseCdkResourceExtension {
         if (this.virtualNode == null) {
             this.virtualNode = new appmesh.VirtualNode(this.context, this._resourceName('VirtualNode'), {
                 mesh: this.resourceImports.importMesh("DefaultAppMesh"),
-                virtualNodeName: core_1.Fn.sub("${Organisation}-${Department}-${Environment}-${AppName}${AppNameSuffix}"),
+                virtualNodeName: core_1.Fn.sub("${AppName}${AppNameSuffix}"),
                 listeners: [
                     appmesh.VirtualNodeListener.http({
                         port: this._props.appPort

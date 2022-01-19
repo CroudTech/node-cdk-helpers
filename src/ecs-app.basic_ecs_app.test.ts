@@ -115,7 +115,7 @@ describe('ECS App Helper', () => {
             })
             expect(stack).toHaveResourceLike('AWS::AppMesh::VirtualNode', {
                 VirtualNodeName: {
-                    "Fn::Sub": "${Organisation}-${Department}-${Environment}-${AppName}${AppNameSuffix}"
+                    "Fn::Sub": "${AppName}${AppNameSuffix}"
                 },
                 Spec: {
                     ServiceDiscovery: {

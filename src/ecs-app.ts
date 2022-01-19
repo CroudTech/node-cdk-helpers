@@ -28,6 +28,9 @@ export class CdkHelpers extends cdkBase.BaseCdkResourceExtension {
                 priority: 100
             });
         });
+        cdk.Tags.of(this.context).add("CfStackName", this.context.stackName, {
+            priority: 100
+        });
     }
 
     _createResources() {
@@ -62,6 +65,9 @@ export class EcsApplicationInit extends cdkBase.BaseCdkResourceExtension {
                     priority: 100
                 });
             }
+        });
+        cdk.Tags.of(this.context).add("CfStackName", this.context.stackName, {
+            priority: 100
         });
     }
 
@@ -703,6 +709,9 @@ export class EcsApplication extends cdkBase.BaseCdkResourceExtension {
             priority: 100
         });
         cdk.Tags.of(this.context).add("AppName", this._props.name, {
+            priority: 100
+        });
+        cdk.Tags.of(this.context).add("CfStackName", this.context.stackName, {
             priority: 100
         });
     }

@@ -112,6 +112,11 @@ describe('ECS App Helper', () => {
             // GIVEN
             const app = new cdk.App();
             const stack = new CdkStackDeploymentDjango(app, 'MyTestStack');
+            expect(stack).toHaveResourceLike('AWS::ECS::Service', {
+                TaskDefinition: {
+                    Ref: "TaskDefinitionB36D86D9"
+                }
+            });
             const expectNetworkMode = ecs.NetworkMode.AWS_VPC;
             expect(stack).toHaveResourceLike('AWS::ServiceDiscovery::Service', {
                 Name: 'testapp.django'
